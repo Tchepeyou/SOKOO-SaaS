@@ -67,7 +67,7 @@ class SokooDB extends Dexie {
   locations!: EntityTable<Location, 'id'>;
 
   constructor() {
-    super('SokooDB');
+    super('SokooDB_v2');
     this.version(5).stores({
       products: 'id, name, category, status',
       movements: 'id, productId, type, timestamp, date',
