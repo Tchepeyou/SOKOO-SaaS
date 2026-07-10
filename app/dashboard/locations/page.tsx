@@ -36,6 +36,7 @@ export default function LocationsPage() {
         // Ensure at least one main if it's the first
         const isFirst = (await db.locations.count()) === 0;
         await db.locations.add({
+          id: crypto.randomUUID(),
           name,
           address,
           isMain: isMain || isFirst,

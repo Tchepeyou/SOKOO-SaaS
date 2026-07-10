@@ -47,6 +47,7 @@ export default function TeamPage() {
         await db.teamMembers.update(editingMember.id, { name, phone, role });
       } else {
         await db.teamMembers.add({
+          id: crypto.randomUUID(),
           name,
           phone,
           role,
