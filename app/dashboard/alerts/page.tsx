@@ -62,54 +62,56 @@ export default function AlertsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 relative">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Alertes de Stock</h2>
-        <p className="text-slate-500">Consultez les produits en rupture ou sous le seuil d'alerte.</p>
-      </div>
+    <>
+      <div className="space-y-6 animate-in fade-in duration-500 relative">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Alertes de Stock</h2>
+          <p className="text-slate-500">Consultez les produits en rupture ou sous le seuil d'alerte.</p>
+        </div>
 
-      {activeAlerts.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {activeAlerts.map((product) => (
-            <div key={product.id} className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-4 ${product.status === "Rupture" ? "border-red-200" : "border-orange-100"}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${product.status === "Rupture" ? "bg-red-100 text-red-600" : "bg-orange-100 text-brand-orange"}`}>
-                    <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{product.name}</h4>
-                    <p className={`text-sm font-medium ${product.status === "Rupture" ? "text-red-500" : "text-orange-500"}`}>
-                      {product.status === "Rupture" ? "Rupture de stock (0)" : `Reste ${product.stock} unités`}
-                    </p>
+        {activeAlerts.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {activeAlerts.map((product) => (
+              <div key={product.id} className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-4 ${product.status === "Rupture" ? "border-red-200" : "border-orange-100"}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${product.status === "Rupture" ? "bg-red-100 text-red-600" : "bg-orange-100 text-brand-orange"}`}>
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-900">{product.name}</h4>
+                      <p className={`text-sm font-medium ${product.status === "Rupture" ? "text-red-500" : "text-orange-500"}`}>
+                        {product.status === "Rupture" ? "Rupture de stock (0)" : `Reste ${product.stock} unités`}
+                      </p>
+                    </div>
                   </div>
                 </div>
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={() => setRestockProduct(product)}
+                    className="flex-1 bg-brand-dark text-white py-2 rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors"
+                  >
+                    Commander
+                  </button>
+                  <button 
+                    onClick={() => handleIgnore(product.id!)}
+                    className="flex items-center justify-center gap-1 flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Ignorer
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2 mt-2">
-                <button 
-                  onClick={() => setRestockProduct(product)}
-                  className="flex-1 bg-brand-dark text-white py-2 rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors"
-                >
-                  Commander
-                </button>
-                <button 
-                  onClick={() => handleIgnore(product.id!)}
-                  className="flex items-center justify-center gap-1 flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Ignorer
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-24 bg-white rounded-2xl shadow-sm border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
-          <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900">Tout va bien !</h3>
-          <p className="text-slate-500 mt-1">Vous n'avez aucune alerte de stock pour le moment.</p>
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-24 bg-white rounded-2xl shadow-sm border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
+            <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900">Tout va bien !</h3>
+            <p className="text-slate-500 mt-1">Vous n'avez aucune alerte de stock pour le moment.</p>
+          </div>
+        )}
+      </div>
 
       {/* Restock Modal */}
       {restockProduct && (
@@ -143,13 +145,13 @@ export default function AlertsPage() {
                   Annuler
                 </button>
                 <button type="submit" className="flex-1 px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm">
-                  Valider l'entrée
+                  Confirmer l'entrée
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -75,8 +75,9 @@ export default function LocationsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 relative">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <>
+      <div className="space-y-6 animate-in fade-in duration-500 relative">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Points de Vente</h2>
           <p className="text-slate-500">Gérez vos différentes boutiques et entrepôts.</p>
@@ -127,9 +128,10 @@ export default function LocationsPage() {
             Aucun point de vente pour le moment.
           </div>
         )}
+        )}
       </div>
 
-      {/* Modal */}
+      {/* Modal moved outside the animate-in div to prevent transform trapping fixed positioning */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsModalOpen(false)}></div>
@@ -173,6 +175,6 @@ export default function LocationsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

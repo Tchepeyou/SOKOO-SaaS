@@ -95,8 +95,9 @@ export default function TeamPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 relative">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <>
+      <div className="space-y-6 animate-in fade-in duration-500 relative">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Équipe & Accès</h2>
           <p className="text-slate-500">Gérez les membres de votre boutique et leurs permissions.</p>
@@ -222,6 +223,6 @@ export default function TeamPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
