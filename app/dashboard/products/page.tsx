@@ -49,14 +49,14 @@ function ProductsContent() {
     const formData = new FormData(e.currentTarget);
     const qty = parseInt(formData.get("quantity") as string) || 0;
     const motif = formData.get("motif") as string || "";
-    const dateInput = formData.get("date") as string;
+    const dateInput = formData.get("date") as string || new Date().toISOString().split('T')[0];
     
     if (isCreatingNewProduct) {
-      const name = formData.get("new_product_name") as string;
-      const category = formData.get("new_product_category") as string;
-      const price = parseInt(formData.get("new_product_price") as string) || 0;
+      const name = formData.get("name") as string;
+      const category = formData.get("category") as string;
+      const price = parseInt(formData.get("price") as string) || 0;
       
-      const stock = movementType === "in" ? qty : -qty;
+      const stock = qty;
       const newProduct: Product = {
         id: crypto.randomUUID(),
         name,
@@ -305,8 +305,13 @@ function ProductsContent() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white sticky top-0 z-10 shrink-0">
               <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Package className="w-5 h-5 text-brand-blue" />
-                Nouveau Produit
+                {isCreatingNewProduct ? (
+                  <><Package className="w-5 h-5 text-brand-blue" />
+                  Nouveau Produit</>
+                ) : (
+                  <><ArrowDownRight className="w-5 h-5 text-brand-green" />
+                  Nouveau Mouvement</>
+                )}
               </h3>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
@@ -316,77 +321,140 @@ function ProductsContent() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto">
               <form onSubmit={handleSave} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Left Column */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex justify-between">
-                        Nom du produit <span className="text-red-500">*</span>
-                      </label>
-                      <input name="name" required type="text" placeholder="Ex: Riz parfumé (Sac 50kg)" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                {isCreatingNewProduct ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                          Nom du produit <span className="text-red-500">*</span>
+                        </label>
+                        <input name="name" required type="text" placeholder="Ex: Riz parfumé (Sac 50kg)" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Catégorie</label>
+                        <select name="category" defaultValue="Alimentation" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none appearance-none">
+                          <option>Alimentation</option>
+                          <option>Boisson</option>
+                          <option>Hygiène</option>
+                          <option>Autre</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Description courte</label>
+                        <textarea name="description" rows={3} placeholder="Détails du produit..." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none resize-none"></textarea>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Catégorie</label>
-                      <select name="category" defaultValue="Alimentation" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none appearance-none">
-                        <option>Alimentation</option>
-                        <option>Boisson</option>
-                        <option>Hygiène</option>
-                        <option>Autre</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Description courte</label>
-                      <textarea name="description" rows={3} placeholder="Détails du produit..." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none resize-none"></textarea>
-                    </div>
-                  </div>
 
-                  {/* Right Column */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex justify-between">
-                        Prix unitaire (FCFA) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input name="price" required type="number" min="0" placeholder="0" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none pr-12" />
-                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                          <span className="text-slate-400 text-sm font-medium">FCFA</span>
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                          Prix unitaire (FCFA) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input name="price" required type="number" min="0" placeholder="0" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none pr-12" />
+                          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <span className="text-slate-400 text-sm font-medium">FCFA</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex justify-between">
-                        Prix d'achat (FCFA)
-                        <span className="text-xs text-slate-400 font-normal">Optionnel</span>
-                      </label>
-                      <div className="relative">
-                        <input name="purchasePrice" type="number" min="0" placeholder="0" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none pr-12" />
-                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                          <span className="text-slate-400 text-sm font-medium">FCFA</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                          Prix d'achat (FCFA)
+                          <span className="text-xs text-slate-400 font-normal">Optionnel</span>
+                        </label>
+                        <div className="relative">
+                          <input name="purchasePrice" type="number" min="0" placeholder="0" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none pr-12" />
+                          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <span className="text-slate-400 text-sm font-medium">FCFA</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex justify-between">
-                        Quantité initiale <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Plus className="w-4 h-4 text-slate-400" />
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                          Quantité initiale <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Plus className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <input name="quantity" required type="number" min="0" placeholder="0" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
                         </div>
-                        <input name="stock" required type="number" min="0" placeholder="0" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                        Produit concerné <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <select name="product_id" required className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none appearance-none">
+                          <option value="" disabled selected>Sélectionnez un produit...</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} ({p.stock} en stock)</option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Type de mouvement</label>
+                        <div className="relative">
+                          <select value={movementType} onChange={(e) => setMovementType(e.target.value as "in" | "out")} className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none appearance-none font-medium">
+                            <option value="in">Entrée (+)</option>
+                            <option value="out">Sortie (-)</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <ChevronDown className="w-4 h-4 text-slate-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                          Quantité <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            {movementType === "in" ? <ArrowDownRight className="w-4 h-4 text-brand-green" /> : <ArrowUpRight className="w-4 h-4 text-brand-red" />}
+                          </div>
+                          <input name="quantity" required type="number" min="1" placeholder="Ex: 50" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none font-bold" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Date du mouvement</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <input name="date" required type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Motif</label>
+                        <input name="motif" type="text" placeholder="Ex: Achat fournisseur..." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Modal Footer inside form to trigger submit */}
                 <div className="pt-6 mt-6 border-t border-slate-100 flex gap-3 sticky bottom-0 bg-white">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
                     Annuler
                   </button>
-                  <button type="submit" className="flex-1 px-4 py-3.5 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm flex justify-center items-center gap-2">
+                  <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-medium transition-colors shadow-sm flex justify-center items-center gap-2 ${
+                    isCreatingNewProduct ? "bg-brand-dark hover:bg-slate-800" : (movementType === "in" ? "bg-brand-green hover:bg-brand-green/90" : "bg-brand-red hover:bg-brand-red/90")
+                  }`}>
                     <Check className="w-5 h-5" />
-                    Enregistrer le produit
+                    {isCreatingNewProduct ? "Enregistrer le produit" : "Valider le mouvement"}
                   </button>
                 </div>
               </form>
