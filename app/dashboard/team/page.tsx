@@ -172,6 +172,7 @@ export default function TeamPage() {
           )}
         </ul>
       </div>
+      </div>
 
       {/* Modal */}
       {isModalOpen && (

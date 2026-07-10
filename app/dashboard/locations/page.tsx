@@ -128,7 +128,7 @@ export default function LocationsPage() {
             Aucun point de vente pour le moment.
           </div>
         )}
-        )}
+      </div>
       </div>
 
       {/* Modal moved outside the animate-in div to prevent transform trapping fixed positioning */}

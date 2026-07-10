@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 
-import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown } from "lucide-react";
+import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown, Check, Edit } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
