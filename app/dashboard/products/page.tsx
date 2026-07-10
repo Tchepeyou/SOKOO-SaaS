@@ -126,9 +126,6 @@ function ProductsContent() {
     
     setEditingProduct(null);
   };
-  
-  const handleSave = () => {};
-  const handleEditSubmit = () => {};
 
   return (
     <>
@@ -320,7 +317,7 @@ function ProductsContent() {
             
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto">
-              <form onSubmit={handleSave} className="space-y-6">
+              <form onSubmit={handleAddMovement} className="space-y-6">
                 {isCreatingNewProduct ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {/* Left Column */}
@@ -478,7 +475,7 @@ function ProductsContent() {
               </button>
             </div>
             
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleEditProduct} className="p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Nom du produit</label>
                 <input name="name" defaultValue={editingProduct.name} required type="text" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
