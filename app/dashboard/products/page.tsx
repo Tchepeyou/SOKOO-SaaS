@@ -58,6 +58,7 @@ function ProductsContent() {
       
       const stock = movementType === "in" ? qty : -qty;
       const newProduct: Product = {
+        id: crypto.randomUUID(),
         name,
         category,
         stock,
@@ -66,9 +67,10 @@ function ProductsContent() {
         createdAt: Date.now()
       };
       
-      const newProductId = await db.products.add(newProduct) as number;
+      const newProductId = await db.products.add(newProduct) as string;
       
       await db.movements.add({
+        id: crypto.randomUUID(),
         productId: newProductId,
         productName: name,
         type: movementType,
@@ -80,7 +82,7 @@ function ProductsContent() {
       });
       
     } else {
-      const productId = parseInt(formData.get("product_id") as string);
+      const productId = formData.get("product_id") as string;
       const product = products.find(p => p.id === productId);
       if (product) {
         const newStock = movementType === "in" ? product.stock + qty : Math.max(0, product.stock - qty);
@@ -91,6 +93,7 @@ function ProductsContent() {
         });
         
         await db.movements.add({
+          id: crypto.randomUUID(),
           productId: product.id!,
           productName: product.name,
           type: movementType,

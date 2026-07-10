@@ -50,7 +50,7 @@ export default function LocationsPage() {
     }
   };
 
-  const handleDelete = async (id: number, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm("Voulez-vous vraiment supprimer ce point de vente ?")) {
       try {

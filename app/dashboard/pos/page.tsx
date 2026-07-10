@@ -54,7 +54,7 @@ export default function POSPage() {
     });
   };
 
-  const handleUpdateQuantity = (productId: number, delta: number) => {
+  const handleUpdateQuantity = (productId: string, delta: number) => {
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
 
@@ -71,11 +71,11 @@ export default function POSPage() {
     });
   };
 
-  const handleSetQuantity = (productId: number, qty: number) => {
+  const handleSetQuantity = (productId: string, qty: number) => {
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
 
-    if (isNaN(qty) || qty <= 0) return;
+    if (isNaN(qty) || qty < 1) return;
 
     setCart(prev => {
       return prev.map(item => {
@@ -88,7 +88,7 @@ export default function POSPage() {
     });
   };
 
-  const handleRemoveItem = (productId: number) => {
+  const handleRemoveItem = (productId: string) => {
     setCart(prev => prev.filter(item => item.productId !== productId));
   };
 

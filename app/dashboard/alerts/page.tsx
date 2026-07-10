@@ -11,12 +11,14 @@ export default function AlertsPage() {
     () => db.products.filter(p => p.status === "Stock Faible" || p.status === "Rupture").toArray()
   ) || [];
 
-  const [ignoredAlertIds, setIgnoredAlertIds] = useState<number[]>([]);
+  const [ignoredAlertIds, setIgnoredAlertIds] = useState<string[]>([]);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
 
   const activeAlerts = allAlertProducts.filter(p => p.id && !ignoredAlertIds.includes(p.id));
 
-  const handleIgnore = (id: number) => {
+  const handleIgnore = (id: string) => {
+    // In MVP, we might just mark it as resolved or remove it from view
+    console.log("Alerte ignorée:", id);
     setIgnoredAlertIds(prev => [...prev, id]);
   };
 

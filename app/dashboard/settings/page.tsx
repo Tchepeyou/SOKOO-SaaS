@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 function SettingsContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("Abonnement");
+  const [smsAlerts, setSmsAlerts] = useState(true);
+  const [emailReports, setEmailReports] = useState(false);
   
   const tabs = ["Abonnement", "Notifications", "Sécurité", "Légal & Support"];
 

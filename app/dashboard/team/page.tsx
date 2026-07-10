@@ -22,7 +22,7 @@ export default function TeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   
   // For dropdown menu
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,6 +70,13 @@ export default function TeamPage() {
       setActiveDropdown(null);
     } catch (error) {
       console.error("Erreur de statut:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Voulez-vous vraiment retirer ce membre de l'équipe ?")) {
+      await db.teamMembers.delete(id);
+      setActiveDropdown(null);
     }
   };
 
