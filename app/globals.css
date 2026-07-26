@@ -74,3 +74,35 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+@media print {
+  @page {
+    margin: 0;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Masquer tous les éléments du corps par défaut */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Sauf le conteneur de la facture et ses enfants */
+  .receipt-container,
+  .receipt-container * {
+    visibility: visible;
+  }
+  
+  /* Positionner la facture en haut à gauche pour l'imprimante */
+  .receipt-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: 300px; /* Largeur typique d'un ticket de caisse (env 80mm) */
+    margin: 0 auto !important; /* Centrer si c'est imprimé sur une page A4 par l'utilisateur */
+  }
+}

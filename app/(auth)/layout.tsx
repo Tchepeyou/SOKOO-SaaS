@@ -14,8 +14,11 @@ export default function AuthLayout({
         </div>
         <div className="relative flex h-full flex-col justify-between p-12 z-10">
           <div>
-            <h1 className="text-4xl font-bold text-white tracking-tight">Sokoo</h1>
-            <p className="mt-4 text-xl text-slate-300 max-w-md leading-relaxed">
+            <div className="flex items-center gap-3 mb-6">
+              <img src="/sokoo_logo_s_only_perfect.png" alt="Sokoo Logo" className="h-12 w-auto object-contain drop-shadow-sm py-0.5" />
+              <h1 className="text-4xl font-bold text-white tracking-tight">Sokoo</h1>
+            </div>
+            <p className="mt-2 text-xl text-slate-300 max-w-md leading-relaxed">
               La solution simple et puissante pour gérer l'inventaire de votre boutique en Afrique.
             </p>
           </div>
@@ -40,9 +43,12 @@ export default function AuthLayout({
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           {/* Logo visible uniquement sur mobile */}
-          <div className="lg:hidden text-center mb-10">
-            <h2 className="text-4xl font-bold text-brand-dark tracking-tight">Sokoo</h2>
-            <p className="mt-2 text-sm text-slate-500">
+          <div className="lg:hidden flex flex-col items-center text-center mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <img src="/sokoo_logo_s_only_perfect.png" alt="Sokoo Logo" className="h-12 w-auto object-contain drop-shadow-sm py-0.5" />
+              <h2 className="text-4xl font-bold text-brand-dark tracking-tight">Sokoo</h2>
+            </div>
+            <p className="text-sm text-slate-500">
               Gérez votre stock en toute simplicité
             </p>
           </div>

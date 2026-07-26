@@ -6,8 +6,12 @@ export interface Product {
   category: string;
   stock: number;
   price: number;
+  purchasePrice?: number;
+  barcode?: string;
+  imageUrl?: string;
   status: string; // "En stock", "Stock Faible", "Rupture"
   createdAt: number;
+  locationId?: string; // Ajouté pour l'isolement par point de vente
 }
 
 export interface Movement {
@@ -20,6 +24,7 @@ export interface Movement {
   date: string; // ISO String
   timestamp: number;
   user: string;
+  locationId?: string; // Ajouté pour l'isolement par point de vente
 }
 
 export interface SaleItem {
@@ -39,6 +44,8 @@ export interface Sale {
   date: string;
   timestamp: number;
   user: string;
+  locationId?: string; // Ajouté pour l'isolement par point de vente
+  paymentMethod?: string;
 }
 
 export interface TeamMember {
@@ -68,10 +75,10 @@ class SokooDB extends Dexie {
 
   constructor() {
     super('SokooDB_v2');
-    this.version(5).stores({
-      products: 'id, name, category, status',
-      movements: 'id, productId, type, timestamp, date',
-      sales: 'id, timestamp, date',
+    this.version(9).stores({
+      products: 'id, name, category, status, locationId, barcode',
+      movements: 'id, productId, type, timestamp, date, locationId',
+      sales: 'id, timestamp, date, locationId',
       teamMembers: 'id, name, role, status',
       locations: 'id, name, isMain'
     });
@@ -81,47 +88,6 @@ class SokooDB extends Dexie {
 export const db = new SokooDB();
 
 export async function initMockData() {
-  const count = await db.products.count();
-  if (count === 0) {
-    const productsToAdd = [
-      { id: crypto.randomUUID(), name: "Riz Mémé Cassé (50kg)", category: "Alimentation", stock: 120, price: 21500, status: "En stock", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Savon Macabo (Carton)", category: "Hygiène", stock: 45, price: 12000, status: "En stock", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Huile Mayor (1L)", category: "Alimentation", stock: 8, price: 1500, status: "Stock Faible", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Lait Nido (400g)", category: "Alimentation", stock: 0, price: 2500, status: "Rupture", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Cube Maggi (Carton)", category: "Alimentation", stock: 85, price: 15000, status: "En stock", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Spaghetti Broli", category: "Alimentation", stock: 200, price: 400, status: "En stock", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Eau Minérale Supermont (1.5L)", category: "Boisson", stock: 3, price: 300, status: "Stock Faible", createdAt: Date.now() }
-    ];
-    
-    await db.products.bulkAdd(productsToAdd);
-    
-    const now = Date.now();
-    const movementsToAdd: Movement[] = [
-      { id: crypto.randomUUID(), productId: productsToAdd[1].id, productName: "Savon Macabo (Carton)", type: "out", quantity: 5, date: new Date(now).toISOString(), timestamp: now, user: "Alain M." },
-      { id: crypto.randomUUID(), productId: productsToAdd[0].id, productName: "Riz Mémé Cassé (50kg)", type: "in", quantity: 20, date: new Date(now - 1000000).toISOString(), timestamp: now - 1000000, user: "Alain M." },
-      { id: crypto.randomUUID(), productId: productsToAdd[2].id, productName: "Huile Mayor (1L)", type: "out", quantity: 2, date: new Date(now - 86400000).toISOString(), timestamp: now - 86400000, user: "Alain M." },
-      { id: crypto.randomUUID(), productId: productsToAdd[3].id, productName: "Lait Nido (400g)", type: "out", quantity: 1, date: new Date(now - 90000000).toISOString(), timestamp: now - 90000000, user: "Alain M." }
-    ];
-    
-    await db.movements.bulkAdd(movementsToAdd);
-  }
-  
-  const teamCount = await db.teamMembers.count();
-  if (teamCount === 0) {
-    const teamToAdd: TeamMember[] = [
-      { id: crypto.randomUUID(), name: "Paul K.", role: "Vendeur", phone: "699 00 11 22", status: "Actif", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Alain M.", role: "Admin", phone: "655 00 00 00", status: "Actif", createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Béatrice F.", role: "Superviseur", phone: "677 88 99 00", status: "Suspendu", createdAt: Date.now() }
-    ];
-    await db.teamMembers.bulkAdd(teamToAdd);
-  }
-
-  const locationsCount = await db.locations.count();
-  if (locationsCount === 0) {
-    const locationsToAdd: Location[] = [
-      { id: crypto.randomUUID(), name: "Boutique Principale", address: "Marché Central, Douala", isMain: true, createdAt: Date.now() },
-      { id: crypto.randomUUID(), name: "Dépôt Akwa", address: "Akwa, Douala", isMain: false, createdAt: Date.now() }
-    ];
-    await db.locations.bulkAdd(locationsToAdd);
-  }
+  // Mock data initialization is disabled now that Supabase sync is live.
+  // We want users to start with a completely empty local database.
 }

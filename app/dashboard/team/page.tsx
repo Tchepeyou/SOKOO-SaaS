@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, TeamMember } from "@/lib/db";
+import { createClient } from "@/lib/supabase/client";
+import { createInvite } from "@/lib/actions/team";
 import { 
   UserPlus, 
   MoreHorizontal, 
@@ -17,13 +19,35 @@ import {
 
 export default function TeamPage() {
   const teamMembers = useLiveQuery(() => db.teamMembers.reverse().toArray()) || [];
+  const localLocations = useLiveQuery(() => db.locations.toArray()) || [];
+  const [invites, setInvites] = useState<any[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
+  
   // For dropdown menu
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const fetchInvites = useCallback(async () => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+    if (profile?.organization_id) {
+      const { data } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .is('accepted_at', null);
+      
+      if (data) setInvites(data);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -32,11 +56,14 @@ export default function TeamPage() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
+    fetchInvites();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [fetchInvites]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const phone = formData.get("phone") as string;
@@ -44,22 +71,24 @@ export default function TeamPage() {
 
     try {
       if (editingMember?.id) {
+        // Only update locally for now (or via server action)
         await db.teamMembers.update(editingMember.id, { name, phone, role });
+        setIsModalOpen(false);
+        setEditingMember(null);
       } else {
-        await db.teamMembers.add({
-          id: crypto.randomUUID(),
-          name,
-          phone,
-          role,
-          status: "Actif",
-          createdAt: Date.now()
-        });
+        const result = await createInvite(formData);
+        if (result.error) {
+          alert(result.error);
+        } else if (result.inviteUrl) {
+          setCreatedInviteUrl(result.inviteUrl);
+          fetchInvites();
+        }
       }
-      setIsModalOpen(false);
-      setEditingMember(null);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
       alert("Une erreur est survenue.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -166,7 +195,28 @@ export default function TeamPage() {
               </div>
             </li>
           ))}
-          {teamMembers.length === 0 && (
+          {invites.map((invite) => (
+            <li key={invite.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-slate-50 transition-colors gap-4 opacity-75">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-orange-100 text-orange-500">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-900">{invite.phone}</p>
+                    <span className="bg-orange-50 text-orange-600 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold border border-orange-100">En attente (Invitation)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-8">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                  {getRoleIcon(invite.role)}
+                  {invite.role}
+                </div>
+              </div>
+            </li>
+          ))}
+          {teamMembers.length === 0 && invites.length === 0 && (
             <li className="p-8 text-center text-slate-500">
               Aucun membre dans l'équipe pour le moment.
             </li>
@@ -190,38 +240,80 @@ export default function TeamPage() {
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Nom complet</label>
-                <input name="name" defaultValue={editingMember?.name} required type="text" placeholder="Ex: Jeanne D." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+            {createdInviteUrl ? (
+              <div className="p-6 text-center space-y-4">
+                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-bold text-slate-900">Invitation créée !</h4>
+                <p className="text-sm text-slate-500">
+                  Envoyez ce lien à la personne pour qu'elle rejoigne votre équipe.
+                </p>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono break-all text-slate-700 select-all">
+                  {createdInviteUrl}
+                </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdInviteUrl);
+                    setIsModalOpen(false);
+                    setCreatedInviteUrl(null);
+                  }} 
+                  className="w-full px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm"
+                >
+                  Copier et fermer
+                </button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Numéro de téléphone</label>
-                <input name="phone" defaultValue={editingMember?.phone} required type="tel" placeholder="Ex: 6XX XX XX XX" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Rôle & Permissions</label>
-                <div className="relative">
-                  <select name="role" defaultValue={editingMember?.role || "Vendeur"} required className="w-full appearance-none px-4 py-3 pr-12 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none cursor-pointer">
-                    <option value="Admin">Administrateur (Accès Total)</option>
-                    <option value="Superviseur">Superviseur (Gestion des stocks & Rapports)</option>
-                    <option value="Vendeur">Vendeur (Caisse & Mouvements)</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                    <ChevronDown className="w-5 h-5 text-slate-400" />
+            ) : (
+              <form onSubmit={handleSave} className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Nom complet (Optionnel)</label>
+                  <input name="name" defaultValue={editingMember?.name} type="text" placeholder="Ex: Jeanne D." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Numéro de téléphone</label>
+                  <input name="phone" defaultValue={editingMember?.phone} required type="tel" placeholder="Ex: 6XX XX XX XX" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Rôle & Permissions</label>
+                  <div className="relative">
+                    <select name="role" defaultValue={editingMember?.role || "employee"} required className="w-full appearance-none px-4 py-3 pr-12 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none cursor-pointer">
+                      <option value="owner">Administrateur (Accès Total)</option>
+                      <option value="manager">Superviseur (Gestion des stocks & Rapports)</option>
+                      <option value="employee">Vendeur (Caisse & Mouvements)</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
-                  Annuler
-                </button>
-                <button type="submit" className="flex-1 px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm">
-                  {editingMember ? "Enregistrer" : "Ajouter"}
-                </button>
-              </div>
-            </form>
+                {localLocations.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Boutique Assignée</label>
+                    <div className="relative">
+                      <select name="location_id" defaultValue={editingMember?.location || ""} className="w-full appearance-none px-4 py-3 pr-12 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none cursor-pointer">
+                        <option value="">Toutes les boutiques (Global)</option>
+                        {localLocations.map(loc => (
+                          <option key={loc.id} value={loc.id}>{loc.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors disabled:opacity-50">
+                    Annuler
+                  </button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
+                    {isSubmitting ? "Création..." : (editingMember ? "Enregistrer" : "Inviter")}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

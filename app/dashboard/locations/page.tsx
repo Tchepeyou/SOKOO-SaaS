@@ -4,12 +4,14 @@ import { Store, MapPin, Plus, X, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Location } from "@/lib/db";
+import { saveLocationToSupabase, deleteLocationFromSupabase } from "@/lib/actions/locations";
 
 export default function LocationsPage() {
   const locations = useLiveQuery(() => db.locations.reverse().toArray()) || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoc, setEditingLoc] = useState<Location | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ export default function LocationsPage() {
     const address = formData.get("address") as string;
     const isMain = formData.get("isMain") === "on";
 
+    setIsLoading(true);
     try {
       if (isMain) {
         // If this one is set to main, un-main all others
@@ -30,13 +33,19 @@ export default function LocationsPage() {
         }
       }
 
+      const id = editingLoc?.id || crypto.randomUUID();
+      
+      // Enregistrer directement dans Supabase via Server Action
+      const res = await saveLocationToSupabase(id, name, address, isMain);
+      if (res?.error) throw new Error(res.error);
+
       if (editingLoc?.id) {
         await db.locations.update(editingLoc.id, { name, address, isMain });
       } else {
         // Ensure at least one main if it's the first
         const isFirst = (await db.locations.count()) === 0;
         await db.locations.add({
-          id: crypto.randomUUID(),
+          id,
           name,
           address,
           isMain: isMain || isFirst,
@@ -47,7 +56,9 @@ export default function LocationsPage() {
       setEditingLoc(null);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert("Une erreur est survenue.");
+      alert("Une erreur est survenue lors de l'enregistrement de la boutique.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -55,6 +66,9 @@ export default function LocationsPage() {
     e.stopPropagation();
     if (window.confirm("Voulez-vous vraiment supprimer ce point de vente ?")) {
       try {
+        const res = await deleteLocationFromSupabase(id);
+        if (res?.error) throw new Error(res.error);
+
         await db.locations.delete(id);
         
         // If we deleted the main one, make the oldest remaining one main
@@ -65,6 +79,7 @@ export default function LocationsPage() {
         }
       } catch (error) {
         console.error("Erreur de suppression:", error);
+        alert("Impossible de supprimer la boutique pour le moment.");
       }
     }
   };

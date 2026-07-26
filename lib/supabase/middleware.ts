@@ -68,7 +68,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/tarifs') ||
     request.nextUrl.pathname.startsWith('/cgu') ||
     request.nextUrl.pathname.startsWith('/confidentialite') ||
-    request.nextUrl.pathname.startsWith('/mentions-legales');
+    request.nextUrl.pathname.startsWith('/mentions-legales') ||
+    request.nextUrl.pathname.startsWith('/api') ||
+    request.nextUrl.pathname.startsWith('/invite');
 
   if (!user && !isPublicRoute) {
     // no user, potentially respond by redirecting the user to the login page

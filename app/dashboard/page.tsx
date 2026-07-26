@@ -5,7 +5,9 @@ import { Package, AlertTriangle, TrendingUp, ArchiveX, ArrowRight } from "lucide
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useLocation } from "@/lib/contexts/LocationContext";
 import { db } from "@/lib/db";
+import { useMemo, useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -18,25 +20,67 @@ import {
   AreaChart,
 } from "recharts";
 
-const mockChartData = [
-  { name: "Lun", ventes: 40 },
-  { name: "Mar", ventes: 30 },
-  { name: "Mer", ventes: 55 },
-  { name: "Jeu", ventes: 45 },
-  { name: "Ven", ventes: 80 },
-  { name: "Sam", ventes: 110 },
-  { name: "Dim", ventes: 90 },
-];
-
-
-
 export default function DashboardPage() {
-  const products = useLiveQuery(() => db.products.toArray()) || [];
-  const recentMovements = useLiveQuery(() => db.movements.orderBy('timestamp').reverse().limit(5).toArray()) || [];
+  const { activeLocationId } = useLocation();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const products = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.products.where('locationId').equals(activeLocationId).toArray();
+    }
+    return [];
+  }, [activeLocationId]) || [];
+
+  const recentMovements = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.movements.where('locationId').equals(activeLocationId).reverse().sortBy('timestamp').then(arr => arr.slice(0, 5));
+    }
+    return [];
+  }, [activeLocationId]) || [];
+
+  const allSales = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.sales.where('locationId').equals(activeLocationId).toArray();
+    }
+    return [];
+  }, [activeLocationId]) || [];
 
   const inStockCount = products.filter(p => p.stock > 0).length;
   const lowStockCount = products.filter(p => p.stock > 0 && p.stock <= 10).length;
   const outOfStockCount = products.filter(p => p.stock === 0).length;
+
+  // Calculate today's sales
+  const todaySalesCount = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return allSales.filter(s => s.date.startsWith(today)).length;
+  }, [allSales]);
+
+  // Generate chart data for the last 7 days
+  const chartData = useMemo(() => {
+    const data = [];
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateString = d.toISOString().split('T')[0];
+      
+      const salesOnDate = allSales.filter(s => s.date.startsWith(dateString)).length;
+      
+      data.push({
+        name: days[d.getDay()],
+        ventes: salesOnDate
+      });
+    }
+    return data;
+  }, [allSales]);
+
+  if (!isMounted) {
+    return <div className="p-8 text-center text-slate-500">Chargement du tableau de bord...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -55,10 +99,10 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Ventes du jour"
-          value="45"
+          value={todaySalesCount.toString()}
           icon={TrendingUp}
           variant="green"
-          description="En hausse de 10%"
+          description="Opérations de caisse"
         />
         <StatCard
           title="Stock Faible"
@@ -87,15 +131,11 @@ export default function DashboardPage() {
               <h3 className="text-base sm:text-lg font-semibold text-slate-900">Évolution des ventes</h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">Aperçu des 7 derniers jours</p>
             </div>
-            <div className="bg-green-50 text-green-600 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold flex items-center gap-1 border border-green-100 shadow-sm">
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
-              +15%
-            </div>
           </div>
           
-          <div className="h-56 sm:h-72 w-full relative z-10 -ml-4 sm:ml-0">
+          <div className="h-56 sm:h-72 w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockChartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorVentes" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -109,6 +149,7 @@ export default function DashboardPage() {
                   tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 12 }}
                   dy={10}
+                  padding={{ left: 15, right: 15 }}
                 />
                 <YAxis 
                   axisLine={false}

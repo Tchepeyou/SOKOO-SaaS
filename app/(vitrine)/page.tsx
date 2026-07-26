@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Package, TrendingUp, BellRing, Store, ShieldCheck } from "lucide-react";
+import { ArrowRight, Package, TrendingUp, BellRing, Store, ShieldCheck, Users, Truck } from "lucide-react";
 
 export default function VitrineHomePage() {
   return (
@@ -33,14 +33,14 @@ export default function VitrineHomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
               href="/login?mode=signup"
-              className="w-full sm:w-auto px-8 py-4 bg-brand-dark text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-8 py-4 bg-brand-dark text-white rounded-full font-bold text-lg hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
             >
               Commencer gratuitement
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
               href="/tarifs"
-              className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-colors"
+              className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-colors"
             >
               Voir les tarifs
             </Link>
@@ -68,7 +68,7 @@ export default function VitrineHomePage() {
       </section>
 
       {/* FEATURES SECTION */}
-      <section className="w-full bg-slate-50 py-24 border-t border-slate-100">
+      <section id="fonctionnalites" className="w-full bg-slate-50 py-24 border-t border-slate-100 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Tout ce dont vous avez besoin pour grandir</h2>
@@ -108,12 +108,45 @@ export default function VitrineHomePage() {
                 Gérez plusieurs points de vente et centralisez toute votre activité sur un seul et même tableau de bord puissant.
               </p>
             </div>
+
+            {/* Feature 4 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-6">
+                <Users className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Gestion des équipes</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Invitez vos collaborateurs et définissez des rôles stricts (caissiers, gérants) pour sécuriser l'accès à vos données.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
+                <TrendingUp className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Analytique avancée</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Découvrez vos produits les plus rentables et optimisez votre trésorerie grâce à nos rapports financiers détaillés.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-6">
+                <Truck className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Gestion des fournisseurs</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Centralisez vos contacts fournisseurs et enregistrez vos bons de commande pour un réapprovisionnement fluide.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA SECTION */}
-      <section className="w-full bg-brand-dark py-24">
+      <section id="ressources" className="w-full bg-brand-dark py-24 scroll-mt-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Prêt à révolutionner votre gestion ?</h2>
           <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
@@ -121,7 +154,7 @@ export default function VitrineHomePage() {
           </p>
           <Link 
             href="/login?mode=signup"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-brand-blue text-white rounded-2xl font-bold text-lg hover:bg-blue-600 transition-colors shadow-xl shadow-brand-blue/20"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-brand-blue text-white rounded-full font-bold text-lg hover:bg-blue-600 transition-colors shadow-xl shadow-brand-blue/20 hover:-translate-y-0.5"
           >
             Créer mon compte
             <ArrowRight className="w-5 h-5" />

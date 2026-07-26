@@ -10,12 +10,7 @@ export default function PricingPage() {
 
   return (
     <div className="py-12 sm:py-24 relative">
-      <div className="absolute top-4 left-4 sm:top-8 sm:left-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-brand-blue transition-colors bg-slate-50 hover:bg-blue-50 px-4 py-2 rounded-full border border-slate-100">
-          <ArrowLeft className="w-4 h-4" />
-          Retour à l'accueil
-        </Link>
-      </div>
+
       <div className="mx-auto max-w-7xl px-6 lg:px-8 mt-12 sm:mt-0">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-base font-semibold leading-7 text-brand-blue">Tarification simple et transparente</h2>

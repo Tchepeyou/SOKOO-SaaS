@@ -1,12 +1,11 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { signIn } from "@/lib/actions/auth";
+import { requestOtp } from "@/lib/actions/auth";
 import { Phone, ArrowRight } from "lucide-react";
 import { useState, Suspense, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 
-function SubmitButton({ mode }: { mode: "login" | "signup" }) {
+function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
@@ -15,7 +14,7 @@ function SubmitButton({ mode }: { mode: "login" | "signup" }) {
       disabled={pending}
       className="group flex w-full justify-center items-center gap-2 rounded-2xl bg-brand-dark px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-dark/20 hover:bg-slate-800 hover:shadow-brand-dark/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
     >
-      {pending ? "Envoi en cours..." : (mode === "login" ? "Se connecter" : "S'inscrire")}
+      {pending ? "Envoi en cours..." : "Continuer"}
       {!pending && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
     </button>
   );
@@ -23,19 +22,28 @@ function SubmitButton({ mode }: { mode: "login" | "signup" }) {
 
 function LoginContent() {
   const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  const [mode, setMode] = useState<"login" | "signup">("login");
 
   useEffect(() => {
-    const queryMode = searchParams.get("mode");
-    if (queryMode === "signup" || queryMode === "login") {
-      setMode(queryMode);
-    }
-  }, [searchParams]);
+    // Safety measure: Wipe local database if the user is on the login page
+    // This prevents data leaks from previous sessions or mock data
+    import("@/lib/db").then(({ db }) => {
+      Promise.all([
+        db.products.clear(),
+        db.sales.clear(),
+        db.movements.clear(),
+        db.locations.clear(),
+        db.teamMembers.clear()
+      ]).catch(console.error);
+    });
+  }, []);
 
   async function clientAction(formData: FormData) {
+    if (!navigator.onLine) {
+      setError("Vous êtes hors ligne. Une connexion internet est requise pour vous connecter.");
+      return;
+    }
     setError(null);
-    const result = await signIn(formData);
+    const result = await requestOtp(formData);
     if (result?.error) {
       setError(result.error);
     }
@@ -43,45 +51,17 @@ function LoginContent() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-6">
+      <div className="mb-8">
         <h3 className="text-2xl font-bold text-slate-900">
-          {mode === "login" ? "Connexion 👋" : "Inscription 👋"}
+          Bienvenue sur Sokoo 👋
         </h3>
         <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-          {mode === "login" 
-            ? "Saisissez votre numéro de téléphone pour accéder à votre espace." 
-            : "Saisissez votre numéro de téléphone. Un code vous sera envoyé par SMS pour créer votre boutique."}
+          Saisissez votre numéro de téléphone pour vous connecter ou créer votre espace gratuitement.
         </p>
       </div>
 
-      <div className="flex bg-slate-100/80 p-1 rounded-2xl mb-8 relative">
-        <button
-          type="button"
-          onClick={() => setMode("login")}
-          className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 z-10 ${
-            mode === "login" ? "text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Connexion
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("signup")}
-          className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 z-10 ${
-            mode === "signup" ? "text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Inscription
-        </button>
-        <div 
-          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-all duration-300 ease-in-out ${
-            mode === "login" ? "left-1" : "left-[calc(50%+2px)]"
-          }`}
-        />
-      </div>
-
       <form action={clientAction} className="space-y-6">
-        <input type="hidden" name="mode" value={mode} />
+        <input type="hidden" name="mode" value="auto" />
         <div>
           <label htmlFor="phone" className="block text-sm font-medium leading-6 text-slate-700">
             Votre numéro
@@ -111,7 +91,7 @@ function LoginContent() {
         )}
 
         <div className="pt-2">
-          <SubmitButton mode={mode} />
+          <SubmitButton />
         </div>
       </form>
     </div>

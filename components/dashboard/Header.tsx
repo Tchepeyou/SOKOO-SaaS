@@ -1,10 +1,17 @@
 "use client";
 
 import { Bell, Search, Menu, User, Command, X, Check, Package, LogOut, Settings, Trash2, Store, Plus } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/actions/sign-out";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { syncWithSupabase } from "@/lib/sync";
+import { createClient } from "@/lib/supabase/client";
+import { Cloud, CloudOff, RefreshCw } from "lucide-react";
+
+import { useLocation } from "@/lib/contexts/LocationContext";
 
 interface HeaderProps {
   setSidebarOpen: (value: boolean) => void;
@@ -17,17 +24,50 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isOnline, setIsOnline] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [userLocationId, setUserLocationId] = useState<string | null>(null);
   
-  const [activeShop, setActiveShop] = useState({ id: 1, name: "Boutique Centrale", role: "Propriétaire", initials: "BC" });
-  const [shops] = useState([
-    { id: 1, name: "Boutique Centrale", role: "Propriétaire", initials: "BC" },
-    { id: 2, name: "Succursale Akwa", role: "Gérant", initials: "SA" }
+  const localLocations = useLiveQuery(() => db.locations.toArray()) || [];
+  
+  const shops = localLocations.map(l => ({
+    id: l.id,
+    name: l.name,
+    role: "Boutique",
+    initials: l.name.substring(0, 2).toUpperCase()
+  }));
+
+  const { activeLocationId, setActiveLocationId, isLoading: isLocationLoading } = useLocation();
+
+  const activeShop = useMemo(() => {
+    if (!activeLocationId) return null;
+    return shops.find(s => s.id === activeLocationId) || shops[0] || null;
+  }, [shops, activeLocationId]);
+  // Dynamic stock alerts
+  const lowStockProducts = useLiveQuery(() => db.products.filter(p => p.stock <= 10).toArray()) || [];
+  
+  // Temporary dismissed state for this session
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  // Static system notifications (can be expanded later)
+  const [systemNotifications, setSystemNotifications] = useState([
+    { id: 'sys-1', title: "Nouvelle connexion", message: "Nouvelle connexion détectée sur un nouvel appareil.", time: "Hier" },
   ]);
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "Rupture de stock : Lait Nido", message: "Il ne reste plus que 2 unités en stock.", time: "Il y a 2 heures" },
-    { id: 2, title: "Nouvelle connexion", message: "Nouvelle connexion détectée sur un nouvel appareil.", time: "Hier" },
-  ]);
+  const notifications = useMemo(() => {
+    const stockAlerts = lowStockProducts
+      .filter(p => !dismissedIds.has(p.id))
+      .map(p => ({
+        id: `stock-${p.id}`,
+        title: p.stock === 0 ? `Rupture : ${p.name}` : `Stock Faible : ${p.name}`,
+        message: p.stock === 0 ? "Ce produit est épuisé." : `Il ne reste plus que ${p.stock} unité(s).`,
+        time: "À l'instant"
+      }));
+    
+    return [...stockAlerts, ...systemNotifications];
+  }, [lowStockProducts, dismissedIds, systemNotifications]);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -65,22 +105,101 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/dashboard/products?search=${encodeURIComponent(searchQuery)}`);
       setIsSearchOpen(false);
       setSearchQuery("");
     }
   };
 
-  const removeNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = async () => {
+      setIsOnline(true);
+      // Auto-sync quand le réseau revient
+      setIsSyncing(true);
+      try {
+        const success = await syncWithSupabase();
+        if (success) {
+          setLastSync(new Date());
+        }
+      } catch (e) {
+        console.error("Auto-sync failed:", e);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    async function fetchRole() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          const userId = data.session.user.id;
+          const member = await db.teamMembers.get(userId);
+          if (member) {
+            setRole(member.role);
+            if (member.location) {
+              setUserLocationId(member.location);
+            }
+          } else {
+            const { data: profile } = await supabase.from('profiles').select('role, location_id').eq('id', userId).single();
+            if (profile) {
+              setRole(profile.role);
+              if (profile.location_id) {
+                setUserLocationId(profile.location_id);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching role:", e);
+      }
+    }
+    fetchRole();
+  }, []);
+
+  const handleManualSync = async () => {
+    if (!isOnline) return;
+    setIsSyncing(true);
+    try {
+      const success = await syncWithSupabase();
+      if (success) {
+        setLastSync(new Date());
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const removeNotification = (id: string | number) => {
+    if (typeof id === 'string' && id.startsWith('stock-')) {
+      const productId = id.replace('stock-', '');
+      setDismissedIds(prev => new Set(prev).add(productId));
+    } else {
+      setSystemNotifications(systemNotifications.filter(n => n.id !== id));
+    }
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
+    const newDismissed = new Set(dismissedIds);
+    lowStockProducts.forEach(p => newDismissed.add(p.id));
+    setDismissedIds(newDismissed);
+    setSystemNotifications([]);
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 print:hidden">
       
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
@@ -200,6 +319,29 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
         >
           <Search className="h-5 w-5" />
         </button>
+
+        {/* Sync Status */}
+        <div className="flex items-center gap-2 mr-2">
+          {isOnline ? (
+            <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
+              <Cloud className="w-4 h-4 text-brand-blue" />
+              <span>{isSyncing ? 'Synchronisation...' : (lastSync ? `Synchro: ${lastSync.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : 'En ligne')}</span>
+              <button 
+                onClick={handleManualSync} 
+                disabled={isSyncing}
+                className="ml-1 p-0.5 rounded-md hover:bg-slate-200 transition-colors disabled:opacity-50"
+                title="Synchroniser maintenant"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-100 shadow-sm animate-pulse">
+              <CloudOff className="w-4 h-4" />
+              <span className="hidden sm:inline">Hors ligne</span>
+            </div>
+          )}
+        </div>
         
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
@@ -273,11 +415,11 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
             className="flex items-center gap-2 p-1 pl-2 pr-3 hover:bg-slate-50 rounded-full border border-transparent hover:border-slate-200 transition-all"
           >
             <div className="h-7 w-7 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-xs">
-              {activeShop.initials}
+              {activeShop?.initials || "..."}
             </div>
             <div className="hidden lg:flex flex-col items-start text-left">
               <span className="text-sm font-medium text-slate-700 leading-tight">
-                {activeShop.name}
+                {activeShop?.name || "Chargement..."}
               </span>
               <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Boutique</span>
             </div>
@@ -288,56 +430,62 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
               <div className="px-3 py-2">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Vos Boutiques</p>
                 <div className="space-y-1">
-                  {shops.map((shop) => (
+                  {shops
+                    .filter(shop => (role === 'owner' || role === 'Admin') || shop.id === userLocationId)
+                    .map((shop) => (
                     <button
                       key={shop.id}
                       onClick={() => {
-                        setActiveShop(shop);
+                        setActiveLocationId(shop.id as string);
                         setIsProfileOpen(false);
                       }}
                       className={`w-full flex items-center justify-between p-2 rounded-xl transition-colors ${
-                        activeShop.id === shop.id ? "bg-brand-blue/5 border border-brand-blue/10" : "hover:bg-slate-50 border border-transparent"
+                        activeShop?.id === shop.id ? "bg-brand-blue/5 border border-brand-blue/10" : "hover:bg-slate-50 border border-transparent"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          activeShop.id === shop.id ? "bg-brand-blue text-white" : "bg-slate-100 text-slate-600"
+                          activeShop?.id === shop.id ? "bg-brand-blue text-white" : "bg-slate-100 text-slate-600"
                         }`}>
                           {shop.initials}
                         </div>
                         <div className="text-left">
-                          <p className={`text-sm font-medium ${activeShop.id === shop.id ? "text-brand-blue" : "text-slate-700"}`}>
+                          <p className={`text-sm font-medium ${activeShop?.id === shop.id ? "text-brand-blue" : "text-slate-700"}`}>
                             {shop.name}
                           </p>
                           <p className="text-xs text-slate-500">{shop.role}</p>
                         </div>
                       </div>
-                      {activeShop.id === shop.id && <Check className="w-4 h-4 text-brand-blue" />}
+                      {activeShop?.id === shop.id && <Check className="w-4 h-4 text-brand-blue" />}
                     </button>
                   ))}
                 </div>
               </div>
               
-              <div className="px-3 py-2">
-                <Link
-                  href="/settings?tab=boutiques"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="w-full flex items-center gap-2 p-2 rounded-xl text-sm font-medium text-brand-blue bg-blue-50/50 hover:bg-blue-50 transition-colors border border-blue-100/50"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ajouter une boutique
-                </Link>
-              </div>
+              {role !== 'employee' && role !== 'Vendeur' && (
+                <div className="px-3 py-2">
+                  <Link
+                    href="/dashboard/settings?tab=boutiques"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="w-full flex items-center gap-2 p-2 rounded-xl text-sm font-medium text-brand-blue bg-blue-50/50 hover:bg-blue-50 transition-colors border border-blue-100/50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Ajouter une boutique
+                  </Link>
+                </div>
+              )}
 
               <div className="border-t border-slate-100 my-2"></div>
-              <Link 
-                href="/settings" 
-                onClick={() => setIsProfileOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                <Settings className="w-4 h-4 text-slate-400" />
-                Paramètres
-              </Link>
+              {role !== 'employee' && role !== 'Vendeur' && role !== 'manager' && role !== 'Superviseur' && (
+                <Link 
+                  href="/dashboard/settings" 
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-slate-400" />
+                  Paramètres
+                </Link>
+              )}
               <Link 
                 href="/tarifs" 
                 onClick={() => setIsProfileOpen(false)}
@@ -358,8 +506,23 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
               </a>
               <div className="border-t border-slate-100 my-1"></div>
               <button 
-                onClick={() => {
+                onClick={async () => {
                   setIsProfileOpen(false);
+                  try {
+                    setIsSyncing(true);
+                    await syncWithSupabase();
+                    
+                    // Clear local offline database to prevent data leaking
+                    await Promise.all([
+                      db.products.clear(),
+                      db.sales.clear(),
+                      db.movements.clear(),
+                      db.locations.clear(),
+                      db.teamMembers.clear()
+                    ]);
+                  } catch (e) {
+                    console.error("Erreur lors de la synchronisation ou de la suppression locale", e);
+                  }
                   signOut();
                 }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

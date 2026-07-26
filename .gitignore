@@ -34,3 +34,28 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local test and debug scripts
+*.py
+check*.js
+check*.mjs
+test*.js
+test*.mjs
+debug*.js
+verify*.js
+verify*.mjs
+seed*.js
+run_*.js
+snap*.js
+take-screenshot.js
+find_uuid.js
+grant_admin.js
+insert_admin.js
+list_profiles.js
+add_payment_method.js
+fix_*.js
+fix_*.sql
+setup_admin.sql
+error.png
+.env
+.env.*

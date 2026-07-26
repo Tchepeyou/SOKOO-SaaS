@@ -2,17 +2,26 @@
 
 import { Suspense } from "react";
 
-import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown, Check, Edit } from "lucide-react";
+import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown, Check, Edit, Image as ImageIcon, Barcode } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Product, Movement } from "@/lib/db";
+import { useLocation } from "@/lib/contexts/LocationContext";
 
 function ProductsContent() {
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search");
-  const rawProducts = useLiveQuery(() => db.products.toArray().then(arr => arr.sort((a, b) => b.createdAt - a.createdAt)));
+  const { activeLocationId } = useLocation();
+
+  const rawProducts = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.products.where('locationId').equals(activeLocationId).toArray().then(arr => arr.sort((a, b) => b.createdAt - a.createdAt));
+    }
+    return [];
+  }, [activeLocationId]);
+  
   const products = rawProducts || [];
   const [searchQuery, setSearchQuery] = useState(urlSearch || "");
   const [activeFilter, setActiveFilter] = useState("Tous");
@@ -33,7 +42,8 @@ function ProductsContent() {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            p.category.toLowerCase().includes(searchQuery.toLowerCase());
+                            p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesFilter = activeFilter === "Tous" || 
                             (activeFilter === "En stock" && p.stock > 10) ||
@@ -55,6 +65,9 @@ function ProductsContent() {
       const name = formData.get("name") as string;
       const category = formData.get("category") as string;
       const price = parseInt(formData.get("price") as string) || 0;
+      const purchasePrice = parseInt(formData.get("purchasePrice") as string) || undefined;
+      const barcode = formData.get("barcode") as string || undefined;
+      const imageUrl = formData.get("imageUrl") as string || undefined;
       
       const stock = qty;
       const newProduct: Product = {
@@ -63,8 +76,12 @@ function ProductsContent() {
         category,
         stock,
         price,
+        purchasePrice,
+        barcode,
+        imageUrl,
         status: stock <= 0 ? "Rupture" : (stock <= 10 ? "Stock Faible" : "En stock"),
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        locationId: activeLocationId || undefined
       };
       
       const newProductId = await db.products.add(newProduct) as string;
@@ -78,7 +95,8 @@ function ProductsContent() {
         motif: motif || "Création de produit",
         date: new Date(dateInput).toISOString(),
         timestamp: Date.now(),
-        user: "Vous"
+        user: "Vous",
+        locationId: activeLocationId || undefined
       });
       
     } else {
@@ -101,7 +119,8 @@ function ProductsContent() {
           motif: motif || (movementType === "in" ? "Entrée de stock" : "Sortie de stock"),
           date: new Date(dateInput).toISOString(),
           timestamp: Date.now(),
-          user: "Vous"
+          user: "Vous",
+          locationId: activeLocationId || undefined
         });
       }
     }
@@ -117,11 +136,17 @@ function ProductsContent() {
     const name = formData.get("name") as string;
     const category = formData.get("category") as string;
     const price = parseInt(formData.get("price") as string) || 0;
+    const purchasePrice = parseInt(formData.get("purchasePrice") as string) || undefined;
+    const barcode = formData.get("barcode") as string || undefined;
+    const imageUrl = formData.get("imageUrl") as string || undefined;
     
     await db.products.update(editingProduct.id, {
       name,
       category,
-      price
+      price,
+      purchasePrice,
+      barcode,
+      imageUrl
     });
     
     setEditingProduct(null);
@@ -223,7 +248,7 @@ function ProductsContent() {
               <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
                 <tr>
                   <th className="px-6 py-4">Produit</th>
-                  <th className="px-6 py-4">Catégorie</th>
+                  <th className="px-6 py-4">Catégorie & Code</th>
                   <th className="px-6 py-4 text-right">En Stock</th>
                   <th className="px-6 py-4 text-right">Prix Unitaire</th>
                   <th className="px-6 py-4 text-center">Statut</th>
@@ -250,11 +275,23 @@ function ProductsContent() {
                 ) : (
                   filteredProducts.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4 font-medium text-slate-900">{item.name}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        <div className="flex items-center gap-3">
+                          <span className="truncate max-w-[150px] sm:max-w-xs block">{item.name}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                          {item.category}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 w-fit">
+                            {item.category}
+                          </span>
+                          {item.barcode && (
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                              <Barcode className="w-3 h-3" />
+                              {item.barcode}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-slate-900">
                         {item.stock}
@@ -338,8 +375,22 @@ function ProductsContent() {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">Description courte</label>
-                        <textarea name="description" rows={3} placeholder="Détails du produit..." className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none resize-none"></textarea>
+                        <label className="text-sm font-semibold text-slate-700">Code-barres</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Barcode className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <input name="barcode" type="text" placeholder="Ex: 37000000000" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">URL de l'image (optionnel)</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <ImageIcon className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <input name="imageUrl" type="url" placeholder="https://..." className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                        </div>
                       </div>
                     </div>
 
@@ -496,6 +547,35 @@ function ProductsContent() {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <span className="text-slate-400 text-sm font-medium">FCFA</span>
                   </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex justify-between">
+                  Prix d'achat (FCFA)
+                </label>
+                <div className="relative">
+                  <input name="purchasePrice" defaultValue={editingProduct.purchasePrice || ""} type="number" min="0" placeholder="0" className="w-full px-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none pr-12" />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <span className="text-slate-400 text-sm font-medium">FCFA</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Code-barres</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Barcode className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <input name="barcode" defaultValue={editingProduct.barcode || ""} type="text" placeholder="Ex: 37000000000" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">URL de l'image (optionnel)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <ImageIcon className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <input name="imageUrl" defaultValue={editingProduct.imageUrl || ""} type="url" placeholder="https://..." className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
                 </div>
               </div>
 

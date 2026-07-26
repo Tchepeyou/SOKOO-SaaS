@@ -38,6 +38,10 @@ function VerifyOtpContent() {
   if (!phone) return null;
 
   async function clientAction(formData: FormData) {
+    if (!navigator.onLine) {
+      setError("Vous êtes hors ligne. Une connexion internet est requise pour vous connecter.");
+      return;
+    }
     setError(null);
     const result = await verify(formData);
     if (result?.error) {

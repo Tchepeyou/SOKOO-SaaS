@@ -5,11 +5,21 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, Product } from "@/lib/db";
 import { useState } from "react";
 
+import { useLocation } from "@/lib/contexts/LocationContext";
+
 export default function AlertsPage() {
+  const { activeLocationId } = useLocation();
+
   // Get all products that are either out of stock or low stock
-  const allAlertProducts = useLiveQuery(
-    () => db.products.filter(p => p.status === "Stock Faible" || p.status === "Rupture").toArray()
-  ) || [];
+  const allAlertProducts = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.products
+        .where('locationId').equals(activeLocationId)
+        .filter(p => p.status === "Stock Faible" || p.status === "Rupture")
+        .toArray();
+    }
+    return [];
+  }, [activeLocationId]) || [];
 
   const [ignoredAlertIds, setIgnoredAlertIds] = useState<string[]>([]);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
@@ -50,7 +60,8 @@ export default function AlertsPage() {
           quantity: quantity,
           date: new Date().toISOString(),
           timestamp: Date.now(),
-          user: "Moi (Gérant)" // Fallback user name
+          user: "Moi (Gérant)", // Fallback user name
+          locationId: activeLocationId || undefined
         });
       });
 

@@ -5,8 +5,17 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { useState, useRef, useEffect } from "react";
 
+import { useLocation } from "@/lib/contexts/LocationContext";
+
 export default function MovementsPage() {
-  const allMovements = useLiveQuery(() => db.movements.orderBy('timestamp').reverse().toArray()) || [];
+  const { activeLocationId } = useLocation();
+
+  const allMovements = useLiveQuery(() => {
+    if (activeLocationId) {
+      return db.movements.where('locationId').equals(activeLocationId).reverse().sortBy('timestamp');
+    }
+    return [];
+  }, [activeLocationId]) || [];
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "in" | "out">("all");

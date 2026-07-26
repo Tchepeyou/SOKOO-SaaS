@@ -1,12 +1,11 @@
-import type { Config } from "tailwindcss"
-
-const config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    './pages/**/*.{ts,tsx,js,jsx}',
+    './components/**/*.{ts,tsx,js,jsx}',
+    './app/**/*.{ts,tsx,js,jsx}',
+    './src/**/*.{ts,tsx,js,jsx}',
   ],
   prefix: "",
   theme: {
@@ -52,14 +51,13 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Custom branding colors based on images
         brand: {
           blue: "#3b82f6",
           green: "#10b981",
           orange: "#f59e0b",
           red: "#ef4444",
           purple: "#8b5cf6",
-          dark: "#1e1b4b", // Deep sidebar color
+          dark: "#1e1b4b",
           light: "#f8fafc",
         }
       },
@@ -85,6 +83,4 @@ const config = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
-
-export default config
+}

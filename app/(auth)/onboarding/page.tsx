@@ -1,25 +1,25 @@
 "use client";
 
 import { Store, MapPin, Package, ArrowRight, ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useFormStatus } from "react-dom";
+import { updateOnboarding } from "@/lib/actions/auth";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="group flex w-full justify-center items-center gap-2 rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/90 hover:shadow-brand-blue/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+    >
+      {pending ? "Création en cours..." : "Créer ma boutique"}
+      {!pending && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+    </button>
+  );
+}
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call / save configuration
-    setTimeout(() => {
-      // In a real app, we would save this to the DB here or via Server Action
-      // We will redirect to dashboard
-      router.push("/dashboard");
-    }, 800);
-  };
-
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-md mx-auto">
       <div className="mb-8 text-center">
@@ -32,7 +32,7 @@ export default function OnboardingPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form action={updateOnboarding} className="space-y-5">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Nom de la boutique</label>
           <div className="relative rounded-2xl shadow-sm">
@@ -91,14 +91,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="group flex w-full justify-center items-center gap-2 rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/90 hover:shadow-brand-blue/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            {isSubmitting ? "Création en cours..." : "Créer ma boutique"}
-            {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
-          </button>
+          <SubmitButton />
         </div>
       </form>
     </div>

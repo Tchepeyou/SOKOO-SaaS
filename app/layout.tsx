@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import ServiceWorkerCleanup from "@/components/ServiceWorkerCleanup";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -33,9 +34,11 @@ export default function RootLayout({
     <html lang="fr" translate="no" suppressHydrationWarning>
       <head>
         <meta name="google" content="notranslate" />
+
       </head>
-      <body className={cn("min-h-screen bg-background font-sans antialiased notranslate", inter.variable)}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased notranslate", inter.variable)} suppressHydrationWarning>
         {children}
+        <ServiceWorkerCleanup />
       </body>
     </html>
   );
