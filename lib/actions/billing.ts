@@ -1,14 +1,12 @@
 "use server";
 
-import { FedaPay, Transaction } from "fedapay";
+import { chariow } from "@/lib/chariow";
 import { createClient } from "@/lib/supabase/server";
 
-FedaPay.setApiKey(process.env.FEDAPAY_SECRET_KEY || "sk_sandbox_XXXX");
-FedaPay.setEnvironment(process.env.FEDAPAY_ENV === "live" ? "live" : "sandbox");
-
 const PLANS = {
-  starter: { price: 5000, name: "Starter" },
-  business: { price: 15000, name: "Business" },
+  starter: { price: 5000, name: "Starter", currency: "XOF" },
+  business: { price: 15000, name: "Business", currency: "XOF" },
+  enterprise: { price: 50000, name: "Enterprise", currency: "XOF" },
 };
 
 export async function createSubscriptionPayment(planId: string) {
@@ -25,7 +23,7 @@ export async function createSubscriptionPayment(planId: string) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id, phone")
+      .select("organization_id, full_name, phone")
       .eq("id", session.user.id)
       .single();
 
@@ -33,45 +31,50 @@ export async function createSubscriptionPayment(planId: string) {
       return { error: "Organisation non trouvée" };
     }
 
-    // Create a pending subscription record to track it
+    // Création de l'enregistrement de l'abonnement en attente dans Supabase
     const { data: sub, error: subError } = await supabase
       .from("subscriptions")
       .insert({
         organization_id: profile.organization_id,
-        plan: planId,
+        plan_id: planId,
         status: "pending",
-        current_period_end: new Date().toISOString()
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select("id")
       .single();
 
     if (subError) throw subError;
 
-    // Create FedaPay transaction
-    const transaction = await Transaction.create({
-      description: `Abonnement Sokoo - Plan ${plan.name}`,
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    const checkoutResult = await chariow.createCheckout({
+      plan_id: planId,
+      name: `Abonnement Sokoo - Plan ${plan.name}`,
+      description: `Mise à niveau SOKOO SaaS (${plan.name})`,
       amount: plan.price,
-      currency: { iso: "XAF" },
-      callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/webhooks/fedapay-return?sub_id=${sub.id}`,
+      currency: plan.currency,
       customer: {
         email: session.user.email || `user_${session.user.id}@sokoo.app`,
-        phone_number: {
-          number: profile.phone?.replace('+', ''),
-          country: "CM"
-        }
+        name: profile.full_name || "Client Sokoo",
+        phone: profile.phone || undefined,
       },
-      custom_metadata: {
+      success_url: `${appUrl}/dashboard/settings?checkout=chariow_success&sub_id=${sub.id}`,
+      cancel_url: `${appUrl}/dashboard/settings?tab=Abonnement`,
+      metadata: {
         subscription_id: sub.id,
         organization_id: profile.organization_id,
         plan_id: planId
       }
     });
 
-    const token = await transaction.generateToken();
-    return { url: token.url };
+    if (checkoutResult.error) {
+      return { error: checkoutResult.error };
+    }
+
+    return { url: checkoutResult.url };
 
   } catch (error: any) {
-    console.error("Erreur création paiement FedaPay:", error);
-    return { error: "Erreur lors de la création du paiement" };
+    console.error("Erreur création paiement Chariow:", error);
+    return { error: error.message || "Erreur lors de la création du paiement" };
   }
 }
