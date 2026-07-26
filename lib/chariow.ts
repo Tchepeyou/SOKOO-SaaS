@@ -16,6 +16,7 @@ export interface ChariowCheckoutRequest {
     email: string;
     name?: string;
     phone?: string;
+    country_code?: string; // Ex: 'BJ', 'CM', 'CI', 'FR'
   };
   success_url: string;
   cancel_url: string;
@@ -46,6 +47,47 @@ export class ChariowClient {
     }
 
     try {
+      // Découpage du nom en first_name et last_name (requis par Chariow)
+      const fullName = (params.customer.name || "Client Sokoo").trim();
+      const nameParts = fullName.split(" ");
+      const firstName = nameParts[0] || "Client";
+      const lastName = nameParts.slice(1).join(" ") || "Sokoo";
+
+      // Nettoyage et préparation du téléphone (requis par Chariow)
+      let phoneNum = params.customer.phone || "0197000000";
+      phoneNum = phoneNum.replace(/[^0-9]/g, ""); // Ne garder que les chiffres
+      if (phoneNum.startsWith("229") && phoneNum.length > 8) phoneNum = phoneNum.substring(3);
+      if (phoneNum.startsWith("237") && phoneNum.length > 9) phoneNum = phoneNum.substring(3);
+
+      // Détermination du produit Chariow (via env ou par défaut sur un produit actif)
+      let productId = params.product_id;
+      if (!productId) {
+        if (params.plan_id === "business") productId = process.env.CHARIOW_PRODUCT_BUSINESS || process.env.CHARIOW_PRODUCT_ID || "prd_81ozq5oi";
+        else if (params.plan_id === "enterprise") productId = process.env.CHARIOW_PRODUCT_ENTERPRISE || process.env.CHARIOW_PRODUCT_ID || "prd_81ozq5oi";
+        else productId = process.env.CHARIOW_PRODUCT_STARTER || process.env.CHARIOW_PRODUCT_ID || "prd_81ozq5oi";
+      }
+
+      const payload = {
+        product_id: productId,
+        email: params.customer.email,
+        first_name: firstName,
+        last_name: lastName,
+        phone: {
+          number: phoneNum || "0197000000",
+          country_code: params.customer.country_code || "BJ"
+        },
+        success_url: params.success_url,
+        cancel_url: params.cancel_url,
+        metadata: {
+          ...params.metadata,
+          plan_id: params.plan_id,
+          amount: params.amount,
+          currency: params.currency || "XOF"
+        }
+      };
+
+      console.log("[Chariow SDK] Envoi requête checkout Chariow:", JSON.stringify(payload));
+
       const response = await fetch(`${this.baseUrl}/checkout`, {
         method: "POST",
         headers: {
@@ -53,35 +95,29 @@ export class ChariowClient {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: JSON.stringify({
-          amount: params.amount,
-          currency: params.currency || "XOF",
-          product_id: params.product_id,
-          plan: params.plan_id,
-          name: params.name,
-          description: params.description,
-          customer: params.customer,
-          success_url: params.success_url,
-          cancel_url: params.cancel_url,
-          metadata: params.metadata || {},
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("[Chariow API Error]", data);
-        return { error: data.message || data.error || "Erreur lors de la communication avec Chariow" };
+        console.error("[Chariow API Error]", response.status, data);
+        const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : null) || data.error || "Erreur lors de la communication avec Chariow";
+        return { error: errorMsg };
       }
 
-      const url = data.url || data.checkout_url || data.data?.url || data.data?.checkout_url;
+      // Extraction propre de l'URL de paiement selon le format réel Chariow : data.data.payment.checkout_url
+      const url = data.data?.payment?.checkout_url || data.payment?.checkout_url || data.data?.checkout_url || data.data?.url || data.url || data.checkout_url;
       if (!url) {
+        console.error("[Chariow SDK] URL introuvable dans la réponse:", data);
         return { error: "URL de paiement non retournée par Chariow" };
       }
 
+      const purchaseId = data.data?.purchase?.id || data.purchase?.id || data.data?.id || data.id;
+
       return {
         url,
-        id: data.id || data.checkout_id || data.data?.id,
+        id: purchaseId,
       };
     } catch (error: any) {
       console.error("[Chariow SDK Error]", error);
@@ -94,8 +130,8 @@ export class ChariowClient {
    */
   verifyWebhookSignature(payload: string, signature: string, secret?: string): boolean {
     const webhookSecret = secret || process.env.CHARIOW_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.warn("[Chariow Webhook] CHARIOW_WEBHOOK_SECRET non défini, vérification ignorée en mode dev/test.");
+    if (!webhookSecret || webhookSecret === "chariow_wh_secret_placeholder") {
+      console.warn("[Chariow Webhook] CHARIOW_WEBHOOK_SECRET non défini ou placeholder, vérification ignorée en mode dev/test.");
       return true;
     }
 
