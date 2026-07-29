@@ -328,27 +328,6 @@ function SparklineCard({ title, value, percent, trend, data, color }: any) {
           <span className={`text-[11px] font-bold ${isUp ? 'text-emerald-500' : 'text-rose-500'}`}>{percent}</span>
         </div>
       </div>
-      <div className="w-24 h-14 md:w-28 md:h-16 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.35}/>
-                <stop offset="95%" stopColor={color} stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke={color} 
-              strokeWidth={2.5} 
-              fill={`url(#${gradId})`} 
-              isAnimationActive={true} 
-              animationDuration={1500}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   );
 }
