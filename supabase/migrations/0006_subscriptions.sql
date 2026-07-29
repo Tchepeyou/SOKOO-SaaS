@@ -1,7 +1,7 @@
 create table if not exists public.subscriptions (
   id uuid default gen_random_uuid() primary key,
   organization_id uuid references public.organizations(id) on delete cascade not null,
-  plan_id text not null,
+  plan text not null,
   status text not null check (status in ('trialing', 'active', 'past_due', 'canceled')),
   current_period_end timestamp with time zone not null,
   fedapay_transaction_id text,

@@ -53,22 +53,30 @@ export class ChariowClient {
       const firstName = nameParts[0] || "Client";
       const lastName = nameParts.slice(1).join(" ") || "Sokoo";
 
-      // Nettoyage et préparation du téléphone (requis par Chariow)
-      let phoneNum = params.customer.phone || "0197000000";
-      phoneNum = phoneNum.replace(/[^0-9]/g, ""); // Ne garder que les chiffres
+      // Nettoyage et préparation du téléphone
+      let phoneObj: any = {
+        number: "97000000",
+        country_code: "BJ"
+      };
       
-      let determinedCountryCode = params.customer.country_code || "BJ";
-      if (phoneNum.startsWith("229") && phoneNum.length > 8) {
-        phoneNum = phoneNum.substring(3);
-        determinedCountryCode = "BJ";
-      }
-      if (phoneNum.startsWith("237") && phoneNum.length > 9) {
-        phoneNum = phoneNum.substring(3);
-        determinedCountryCode = "CM";
-      }
-      // Si c'est un numéro à 9 chiffres commençant par 6, on assume le Cameroun par défaut (CM)
-      if (phoneNum.length === 9 && phoneNum.startsWith("6")) {
-        determinedCountryCode = "CM";
+      if (params.customer.phone) {
+        let phoneNum = params.customer.phone.replace(/[^0-9]/g, ""); // Ne garder que les chiffres
+        let determinedCountryCode = params.customer.country_code || "BJ";
+        
+        if (phoneNum.startsWith("229") && phoneNum.length > 8) {
+          phoneNum = phoneNum.substring(3);
+          determinedCountryCode = "BJ";
+        } else if (phoneNum.startsWith("237") && phoneNum.length > 9) {
+          phoneNum = phoneNum.substring(3);
+          determinedCountryCode = "CM";
+        } else if (phoneNum.length === 9 && phoneNum.startsWith("6")) {
+          determinedCountryCode = "CM";
+        }
+
+        phoneObj = {
+          number: phoneNum,
+          country_code: determinedCountryCode
+        };
       }
 
       // Détermination du produit Chariow (via env ou par défaut sur un produit actif)
@@ -79,28 +87,28 @@ export class ChariowClient {
         else productId = process.env.CHARIOW_PRODUCT_STARTER || process.env.CHARIOW_PRODUCT_ID || "prd_81ozq5oi";
       }
 
-      const payload = {
+      const payload: any = {
         product_id: productId,
         email: params.customer.email,
         first_name: firstName,
         last_name: lastName,
-        phone: {
-          number: phoneNum || "0197000000",
-          country_code: determinedCountryCode
-        },
         redirect_url: params.success_url, // Chariow utilise redirect_url au lieu de success_url/cancel_url
         payment_currency: params.currency || "XAF",
         custom_metadata: {
           ...params.metadata,
           plan_id: params.plan_id,
           expected_amount: params.amount,
-          cancel_url: params.cancel_url // Sauvegardé au cas où, bien que Chariow ne l'utilise pas directement
+          cancel_url: params.cancel_url
         }
       };
 
+      if (phoneObj) {
+        payload.phone = phoneObj;
+      }
+
       console.log("[Chariow SDK] Envoi requête checkout Chariow:", JSON.stringify(payload));
 
-      const response = await fetch(`${this.baseUrl}/checkout`, {
+      let response = await fetch(`${this.baseUrl}/checkout`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${this.apiKey}`,
@@ -110,12 +118,32 @@ export class ChariowClient {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      let data = await response.json();
+
+      // Si le numéro de téléphone du client est rejeté par la validation stricte de Chariow (ex: faux numéro de test)
+      // On réessaie automatiquement avec un numéro de secours valide pour ne pas bloquer l'accès à la page de paiement.
+      const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : null) || data.error;
+      if (!response.ok && errorMsg && typeof errorMsg === 'string' && errorMsg.includes("Invalid phone number")) {
+        console.warn("[Chariow SDK] Numéro invalide détecté, nouvel essai avec le numéro de secours...");
+        payload.phone = { number: "0197000000", country_code: "BJ" };
+        
+        response = await fetch(`${this.baseUrl}/checkout`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        data = await response.json();
+      }
 
       if (!response.ok) {
         console.error("[Chariow API Error]", response.status, data);
-        const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : null) || data.error || "Erreur lors de la communication avec Chariow";
-        return { error: errorMsg };
+        const finalErrorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : null) || data.error || "Erreur lors de la communication avec Chariow";
+        return { error: finalErrorMsg };
       }
 
       // Extraction propre de l'URL de paiement selon le format réel Chariow : data.data.payment.checkout_url

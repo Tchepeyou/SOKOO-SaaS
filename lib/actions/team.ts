@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { checkPlanLimits } from "@/lib/limits";
 
 export async function createInvite(formData: FormData) {
   const phone = formData.get("phone") as string;
@@ -29,6 +30,12 @@ export async function createInvite(formData: FormData) {
 
   if (!profile?.organization_id || !["owner", "manager", "Admin"].includes(profile.role)) {
     return { error: "Vous n'avez pas les permissions nécessaires." };
+  }
+
+  // Vérifier la limite du plan
+  const limits = await checkPlanLimits(profile.organization_id, 'users');
+  if (!limits.allowed) {
+    return { error: limits.message };
   }
 
   // Generate a random token

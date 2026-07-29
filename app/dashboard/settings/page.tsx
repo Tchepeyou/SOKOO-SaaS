@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useTransition } from "react";
 import { Store, CreditCard, BellRing, Shield, Check, Smartphone, Mail, Key, Plus, MapPin, Package, Edit, Trash2, MessageCircle, ArrowRight, X, ChevronDown, User } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { updateUserProfile } from "@/lib/actions/profile";
 import { createSubscriptionPayment } from "@/lib/actions/billing";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +17,7 @@ function SettingsContent() {
   const [smsAlerts, setSmsAlerts] = useState(true);
   const [emailReports, setEmailReports] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [updateMessage, setUpdateMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -27,8 +28,15 @@ function SettingsContent() {
     activeLocationId ? db.locations.get(activeLocationId) : undefined
   , [activeLocationId]);
 
+  const router = useRouter();
+
   useEffect(() => {
-    if (searchParams.get("tab") === "boutiques") {
+    if (searchParams.get("checkout") === "chariow_success") {
+      setUpdateMessage({ type: "success", text: "Félicitations ! Votre paiement a été traité et votre abonnement est actif." });
+      // Nettoyer l'URL
+      const newUrl = window.location.pathname + "?tab=Abonnement";
+      window.history.replaceState({}, "", newUrl);
+    } else if (searchParams.get("tab") === "boutiques") {
       setActiveTab("Mes Boutiques");
     }
   }, [searchParams]);
@@ -48,7 +56,7 @@ function SettingsContent() {
             .from("profiles")
             .select(`
               *,
-              organizations(name),
+              organizations(name, created_at, subscriptions(plan, status, current_period_end)),
               locations(name, address)
             `)
             .eq("id", session.user.id)
@@ -82,15 +90,23 @@ function SettingsContent() {
     }
   };
 
-  const handleSubscribe = (planId: string) => {
-    startTransition(async () => {
-      const result = await createSubscriptionPayment(planId);
+  const handleSubscribe = async (planId: string) => {
+    setLoadingPlan(planId);
+    try {
+      const actualPlanId = planId === 'premium' ? 'business' : planId;
+      const result = await createSubscriptionPayment(actualPlanId);
       if (result?.error) {
         alert(result.error);
+        setLoadingPlan(null);
       } else if (result?.url) {
         window.location.href = result.url;
+      } else {
+        setLoadingPlan(null);
       }
-    });
+    } catch (error) {
+      console.error(error);
+      setLoadingPlan(null);
+    }
   };
 
   const handleProfileUpdate = (formData: FormData) => {
@@ -104,6 +120,29 @@ function SettingsContent() {
       }
     });
   };
+
+  let currentPlanName = "Essentiel (Essai Gratuit)";
+  let daysRemainingText = "Calcul des jours restants...";
+  let showPremiumButton = true;
+
+  if (profileData?.organizations) {
+    const org = profileData.organizations;
+    const activeSub = org.subscriptions?.find((s: any) => s.status === 'active');
+
+    if (activeSub) {
+      currentPlanName = activeSub.plan === 'starter' ? 'Starter' : activeSub.plan === 'business' ? 'Business' : 'Enterprise';
+      const endDate = new Date(activeSub.current_period_end);
+      const diffTime = endDate.getTime() - new Date().getTime();
+      const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      daysRemainingText = diffDays > 0 ? `Il vous reste ${diffDays} jours d'abonnement.` : "Votre abonnement a expiré.";
+      showPremiumButton = activeSub.plan === 'starter';
+    } else {
+      const trialEndsAt = new Date(new Date(org.created_at).getTime() + 14 * 24 * 60 * 60 * 1000);
+      const diffTime = trialEndsAt.getTime() - new Date().getTime();
+      const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      daysRemainingText = diffDays > 0 ? `Il vous reste ${diffDays} jours d'essai gratuit.` : "Votre période d'essai a expiré.";
+    }
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 w-full">
@@ -312,18 +351,20 @@ function SettingsContent() {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                       <p className="text-brand-blue font-semibold uppercase tracking-wider text-xs mb-1">Plan Actuel</p>
-                      <h4 className="text-2xl font-bold">Essentiel (Essai Gratuit)</h4>
-                      <p className="text-slate-300 mt-1 text-sm">Il vous reste 14 jours d'essai gratuit.</p>
+                      <h4 className="text-2xl font-bold">{currentPlanName}</h4>
+                      <p className="text-slate-300 mt-1 text-sm">{daysRemainingText}</p>
                     </div>
-                    <button disabled={isPending} onClick={() => handleSubscribe('business')} className="bg-brand-green text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-brand-green/90 transition-colors whitespace-nowrap shadow-sm disabled:opacity-70">
-                      {isPending ? "Redirection..." : "Passer en Premium"}
-                    </button>
+                    {showPremiumButton && (
+                      <button disabled={loadingPlan === 'premium'} onClick={() => handleSubscribe('premium')} className="bg-brand-green text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-brand-green/90 transition-colors whitespace-nowrap shadow-sm disabled:opacity-70">
+                        {loadingPlan === 'premium' ? "Redirection..." : "Passer en Premium"}
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
                   {/* Plan Starter */}
-                  <div className="border border-slate-200 rounded-2xl p-6 relative flex flex-col bg-white">
+                  <div className="border border-slate-200 rounded-2xl p-6 relative flex flex-col bg-white hover:shadow-md hover:border-slate-300 hover:-translate-y-1 transition-all duration-300">
                     <h4 className="text-lg font-bold text-slate-900">Starter</h4>
                     <p className="text-sm text-slate-500 mt-1">Boutique individuelle.</p>
                     <div className="mt-4 mb-6">
@@ -338,20 +379,20 @@ function SettingsContent() {
                         </li>
                       ))}
                     </ul>
-                    <button onClick={() => handleAction("Vous êtes déjà sur ce plan.")} className="w-full text-center py-2 border border-slate-200 text-slate-600 rounded-xl font-medium text-sm hover:bg-slate-50 transition-colors">
-                      Plan Actuel
+                    <button disabled={loadingPlan === 'starter'} onClick={() => handleSubscribe('starter')} className="w-full text-center py-2 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-70">
+                      {loadingPlan === 'starter' ? "Patientez..." : "S'abonner"}
                     </button>
                   </div>
 
                   {/* Plan Business */}
-                  <div className="border-2 border-brand-blue rounded-2xl p-6 relative bg-brand-blue/5 flex flex-col shadow-sm">
-                    <div className="absolute top-0 right-6 transform -translate-y-1/2 bg-brand-blue text-white px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                  <div className="border-2 border-brand-blue rounded-2xl p-6 relative bg-gradient-to-b from-brand-blue/5 to-white flex flex-col shadow-md shadow-brand-blue/10 hover:shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-1 transition-all duration-300">
+                    <div className="absolute top-0 right-6 transform -translate-y-1/2 bg-brand-blue text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
                       Populaire
                     </div>
                     <h4 className="text-lg font-bold text-brand-blue">Business</h4>
                     <p className="text-sm text-slate-500 mt-1">Pour la croissance.</p>
                     <div className="mt-4 mb-6">
-                      <span className="text-2xl font-bold text-slate-900">15 000+</span>
+                      <span className="text-2xl font-bold text-slate-900">15 000</span>
                       <span className="text-sm text-slate-500"> FCFA/mois</span>
                     </div>
                     <ul className="space-y-3 mb-6 flex-1">
@@ -362,13 +403,13 @@ function SettingsContent() {
                         </li>
                       ))}
                     </ul>
-                    <button disabled={isPending} onClick={() => handleSubscribe('business')} className="w-full text-center py-2 bg-brand-blue text-white rounded-xl font-medium text-sm hover:bg-blue-600 transition-colors disabled:opacity-70">
-                      {isPending ? "Patientez..." : "Mettre à niveau"}
+                    <button disabled={loadingPlan === 'business'} onClick={() => handleSubscribe('business')} className="w-full text-center py-2 bg-brand-blue text-white rounded-xl font-medium text-sm hover:bg-blue-600 hover:shadow-md transition-all disabled:opacity-70">
+                      {loadingPlan === 'business' ? "Patientez..." : "Mettre à niveau"}
                     </button>
                   </div>
 
                   {/* Plan Enterprise */}
-                  <div className="border border-slate-200 rounded-2xl p-6 relative flex flex-col bg-white">
+                  <div className="border border-slate-200 rounded-2xl p-6 relative flex flex-col bg-white hover:shadow-md hover:border-slate-300 hover:-translate-y-1 transition-all duration-300">
                     <h4 className="text-lg font-bold text-slate-900">Enterprise</h4>
                     <p className="text-sm text-slate-500 mt-1">Besoins sur-mesure.</p>
                     <div className="mt-4 mb-6">
@@ -386,7 +427,7 @@ function SettingsContent() {
                       href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP_NUMBER || "237000000000"}?text=${encodeURIComponent("Bonjour, je souhaite un devis pour le plan Enterprise.")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full block text-center py-2 bg-slate-900 text-white rounded-xl font-medium text-sm hover:bg-slate-800 transition-colors"
+                      className="w-full block text-center py-2 bg-slate-900 text-white rounded-xl font-medium text-sm hover:bg-slate-800 hover:shadow-md transition-all"
                     >
                       Nous contacter
                     </a>

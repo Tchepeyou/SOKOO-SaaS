@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (successEvents.includes(eventType) || event.status === "succeeded" || event.status === "paid") {
       const supabase = createAdminClient();
       const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 30); // Abonnement 30 jours par défaut
+      endDate.setDate(endDate.getDate() + 32); // Abonnement 32 jours par défaut
 
       if (subId) {
         // Mise à jour de l'abonnement existant dans Supabase
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
           .update({
             status: "active",
             current_period_end: endDate.toISOString(),
-            plan_id: planId
+            plan: planId
           })
           .eq("id", subId);
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
             .update({
               status: "active",
               current_period_end: endDate.toISOString(),
-              plan_id: planId
+              plan: planId
             })
             .eq("id", existingSub.id);
         } else {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
             .from("subscriptions")
             .insert({
               organization_id: orgId,
-              plan_id: planId,
+              plan: planId,
               status: "active",
               current_period_end: endDate.toISOString()
             });

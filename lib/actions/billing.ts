@@ -37,9 +37,9 @@ export async function createSubscriptionPayment(planId: string) {
       .from("subscriptions")
       .insert({
         organization_id: profile.organization_id,
-        plan_id: planId,
+        plan: planId,
         status: "trialing", // "pending" n'est pas dans la contrainte CHECK, on utilise "trialing"
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        current_period_end: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select("id")
       .single();
@@ -61,8 +61,10 @@ export async function createSubscriptionPayment(planId: string) {
       customer: {
         email: session.user.email || `user_${session.user.id}@sokoo.app`,
         name: profile.full_name || "Client Sokoo",
-        phone: profile.phone || undefined,
-        country_code: profile.phone && (profile.phone.startsWith("6") || profile.phone.startsWith("237")) ? "CM" : "BJ"
+        ...(profile.phone ? { 
+          phone: profile.phone.replace(/[^0-9+]/g, ''),
+          country_code: profile.phone.startsWith("6") || profile.phone.startsWith("237") || profile.phone.startsWith("+237") ? "CM" : "BJ"
+        } : {})
       },
       success_url: `${appUrl}/dashboard/settings?checkout=chariow_success&sub_id=${subId}`,
       cancel_url: `${appUrl}/dashboard/settings?tab=Abonnement`,

@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { checkPlanLimits } from "@/lib/limits";
 
 export async function saveLocationToSupabase(id: string, name: string, address: string, isMain: boolean) {
   const supabase = createClient();
@@ -16,6 +17,12 @@ export async function saveLocationToSupabase(id: string, name: string, address: 
     .single();
 
   if (!profile?.organization_id) return { error: "Organisation introuvable" };
+
+  // Vérifier la limite du plan
+  const limits = await checkPlanLimits(profile.organization_id, 'locations');
+  if (!limits.allowed) {
+    return { error: limits.message };
+  }
 
   const adminClient = createAdminClient();
   
@@ -70,6 +77,12 @@ export async function bulkSaveLocationsToSupabase(locations: any[]) {
     .single();
 
   if (!profile?.organization_id) return { error: "Organisation introuvable" };
+
+  // Vérifier la limite du plan
+  const limits = await checkPlanLimits(profile.organization_id, 'locations');
+  if (!limits.allowed) {
+    return { error: limits.message };
+  }
 
   const adminClient = createAdminClient();
   

@@ -5,85 +5,89 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export async function requestOtp(formData: FormData) {
+export async function loginWithPassword(formData: FormData) {
   const phone = formData.get("phone") as string;
-  const mode = formData.get("mode") as string || "login";
+  const password = formData.get("password") as string;
   
-  if (!phone) {
-    return { error: "Numéro de téléphone requis" };
+  if (!phone || !password) {
+    return { error: "Numéro de téléphone et mot de passe requis" };
   }
 
   const formattedPhone = phone.startsWith("+") ? phone.replace(/\s+/g, '') : `+237${phone.replace(/\s+/g, '')}`;
-  const supabase = createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    phone: formattedPhone,
-  });
-
-  if (error) {
-    console.error("Erreur envoi OTP:", error);
-    if (process.env.NODE_ENV === "development" || error.code === "phone_provider_disabled" || error.status === 400) {
-      console.warn("[Dev Auth] Envoi SMS impossible (mode dev / provider désactivé). Redirection vers /verify-otp.");
-    } else {
-      return { error: "Impossible d'envoyer le code SMS. Vérifiez le numéro." };
-    }
-  }
-  
-  redirect(`/verify-otp?phone=${encodeURIComponent(formattedPhone)}&mode=${mode}`);
-}
-
-export async function verify(formData: FormData) {
-  const phone = formData.get("phone") as string;
-  const mode = formData.get("mode") as string || "login";
-  const token = formData.get("token") as string;
-  
-  if (!token || token.length !== 6) {
-    return { error: "Code invalide. Veuillez entrer un code à 6 chiffres." };
-  }
-
-  const formattedPhone = phone.startsWith("+") ? phone.replace(/\s+/g, '') : `+237${phone.replace(/\s+/g, '')}`;
+  const pseudoEmail = `${formattedPhone.replace('+', '')}@sokoo.app`;
   const supabase = createClient();
 
-  let user = null;
-  const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-    phone: formattedPhone,
-    token: token,
-    type: "sms",
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email: pseudoEmail,
+    password: password,
   });
 
-  if (verifyData?.user) {
-    user = verifyData.user;
-  } else if (process.env.NODE_ENV === "development" || token === "123456" || token === "000000") {
-    // Fallback de dev pour tester sans serveur SMS actif
-    const emailFallback = `${formattedPhone.replace('+', '')}@sokoo.app`;
-    const { data: passData } = await supabase.auth.signInWithPassword({
-      email: emailFallback,
-      password: "SokooPassword123!"
-    });
-    if (passData?.user) {
-      user = passData.user;
-      console.log(`[Dev Auth] Connexion réussie via mot de passe fallback pour ${formattedPhone}`);
-    }
+  if (error || !authData.user) {
+    console.error("Erreur de connexion:", error);
+    return { error: "Numéro de téléphone ou mot de passe incorrect." };
   }
 
-  if (!user) {
-    console.error("Erreur vérification OTP:", verifyError);
-    return { error: "Code invalide ou expiré." };
-  }
+  await ensureProfileAndOrganization(supabase, authData.user.id, formattedPhone);
 
-  // Si c'est une connexion ou création automatique réussie
-  await ensureProfileAndOrganization(supabase, user.id, formattedPhone);
-    
-  // Check if admin
   const { data: adminData } = await supabase
     .from("platform_admins")
     .select("id")
-    .eq("id", user.id)
+    .eq("id", authData.user.id)
     .single();
       
   if (adminData) {
     revalidatePath("/admin", "layout");
     redirect("/admin");
   }
+
+  revalidatePath("/dashboard", "layout");
+  redirect("/dashboard");
+}
+
+export async function registerWithPassword(formData: FormData) {
+  const phone = formData.get("phone") as string;
+  const password = formData.get("password") as string;
+  
+  if (!phone || !password) {
+    return { error: "Numéro de téléphone et mot de passe requis" };
+  }
+  if (password.length < 6) {
+    return { error: "Le mot de passe doit contenir au moins 6 caractères" };
+  }
+
+  const formattedPhone = phone.startsWith("+") ? phone.replace(/\s+/g, '') : `+237${phone.replace(/\s+/g, '')}`;
+  const pseudoEmail = `${formattedPhone.replace('+', '')}@sokoo.app`;
+  
+  const adminSupabase = createAdminClient();
+  const supabase = createClient();
+
+  // On force la création de l'utilisateur avec l'email pseudo via admin API pour contourner les confirmations
+  const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
+    email: pseudoEmail,
+    password: password,
+    email_confirm: true,
+    user_metadata: { phone: formattedPhone }
+  });
+
+  if (createError) {
+    console.error("Erreur d'inscription admin:", createError);
+    if (createError.message.includes("already registered")) {
+      return { error: "Ce numéro de téléphone est déjà enregistré." };
+    }
+    return { error: "Impossible de créer le compte. Vérifiez le numéro." };
+  }
+
+  // Connexion automatique avec le pseudo email
+  const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+    email: pseudoEmail,
+    password: password,
+  });
+
+  if (signInError || !authData.user) {
+    return { error: "Compte créé, mais la connexion a échoué. Rechargez la page et connectez-vous manuellement." };
+  }
+
+  await ensureProfileAndOrganization(supabase, authData.user.id, formattedPhone);
 
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard");

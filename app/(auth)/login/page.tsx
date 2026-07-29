@@ -1,11 +1,12 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { requestOtp } from "@/lib/actions/auth";
-import { Phone, ArrowRight } from "lucide-react";
+import { loginWithPassword, registerWithPassword } from "@/lib/actions/auth";
+import { Phone, Lock, ArrowRight, Loader2, UserPlus, LogIn, Eye, EyeOff } from "lucide-react";
 import { useState, Suspense, useEffect } from "react";
+import Link from "next/link";
 
-function SubmitButton() {
+function SubmitButton({ isLogin }: { isLogin: boolean }) {
   const { pending } = useFormStatus();
 
   return (
@@ -14,18 +15,23 @@ function SubmitButton() {
       disabled={pending}
       className="group flex w-full justify-center items-center gap-2 rounded-2xl bg-brand-dark px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-dark/20 hover:bg-slate-800 hover:shadow-brand-dark/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
     >
-      {pending ? "Envoi en cours..." : "Continuer"}
+      {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : isLogin ? "Se connecter" : "Créer mon compte"}
       {!pending && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
     </button>
   );
 }
 
+import { useSearchParams } from "next/navigation";
+
 function LoginContent() {
+  const searchParams = useSearchParams();
+  const defaultIsLogin = searchParams.get("mode") !== "signup";
+  
   const [error, setError] = useState<string | null>(null);
+  const [isLogin, setIsLogin] = useState(defaultIsLogin);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Safety measure: Wipe local database if the user is on the login page
-    // This prevents data leaks from previous sessions or mock data
     import("@/lib/db").then(({ db }) => {
       Promise.all([
         db.products.clear(),
@@ -39,32 +45,58 @@ function LoginContent() {
 
   async function clientAction(formData: FormData) {
     if (!navigator.onLine) {
-      setError("Vous êtes hors ligne. Une connexion internet est requise pour vous connecter.");
+      setError("Vous êtes hors ligne. Une connexion internet est requise.");
       return;
     }
     setError(null);
-    const result = await requestOtp(formData);
+    const action = isLogin ? loginWithPassword : registerWithPassword;
+    const result = await action(formData);
+    
     if (result?.error) {
       setError(result.error);
     }
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-sm mx-auto">
+      <div className="mb-8 text-center sm:text-left">
         <h3 className="text-2xl font-bold text-slate-900">
-          Bienvenue sur Sokoo 👋
+          {isLogin ? "Bienvenue sur Sokoo 👋" : "Créez votre boutique 🚀"}
         </h3>
         <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-          Saisissez votre numéro de téléphone pour vous connecter ou créer votre espace gratuitement.
+          {isLogin 
+            ? "Saisissez vos identifiants pour accéder à votre tableau de bord." 
+            : "Renseignez votre numéro et un mot de passe pour démarrer gratuitement."}
         </p>
       </div>
 
-      <form action={clientAction} className="space-y-6">
-        <input type="hidden" name="mode" value="auto" />
+      <div className="flex bg-slate-100 p-1 rounded-2xl mb-8">
+        <button
+          type="button"
+          onClick={() => { setIsLogin(true); setError(null); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+            isLogin ? "bg-white text-brand-dark shadow-sm" : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <LogIn className="h-4 w-4" />
+          Connexion
+        </button>
+        <button
+          type="button"
+          onClick={() => { setIsLogin(false); setError(null); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+            !isLogin ? "bg-white text-brand-dark shadow-sm" : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <UserPlus className="h-4 w-4" />
+          Inscription
+        </button>
+      </div>
+
+      <form action={clientAction} className="space-y-5">
         <div>
           <label htmlFor="phone" className="block text-sm font-medium leading-6 text-slate-700">
-            Votre numéro
+            Numéro de téléphone
           </label>
           <div className="relative mt-2 rounded-2xl shadow-sm">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -81,6 +113,40 @@ function LoginContent() {
           </div>
         </div>
 
+        <div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-700">
+              Mot de passe
+            </label>
+            {isLogin && (
+              <Link href="/forgot-password" className="text-sm font-medium text-brand-blue hover:text-blue-500 transition-colors">
+                Oublié ?
+              </Link>
+            )}
+          </div>
+          <div className="relative mt-2 rounded-2xl shadow-sm">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+              <Lock className="h-5 w-5 text-slate-400" aria-hidden="true" />
+            </div>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              required
+              minLength={6}
+              className="block w-full rounded-2xl border-0 py-3.5 pl-12 pr-12 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-blue sm:text-sm sm:leading-6 transition-all hover:ring-slate-300"
+              placeholder={isLogin ? "Votre mot de passe" : "Minimum 6 caractères"}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
         {error && (
           <div className="animate-in fade-in text-sm text-red-600 bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3">
             <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -90,8 +156,8 @@ function LoginContent() {
           </div>
         )}
 
-        <div className="pt-2">
-          <SubmitButton />
+        <div className="pt-4">
+          <SubmitButton isLogin={isLogin} />
         </div>
       </form>
     </div>

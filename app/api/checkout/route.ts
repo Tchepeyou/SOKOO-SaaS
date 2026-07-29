@@ -35,9 +35,9 @@ export async function POST(req: Request) {
       .from("subscriptions")
       .insert({
         organization_id: profile.organization_id,
-        plan_id: plan || "starter",
-        status: "pending",
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        plan: plan || "starter",
+        status: "trialing",
+        current_period_end: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select("id")
       .single();
