@@ -138,7 +138,8 @@ function ProductsContent() {
     const price = parseInt(formData.get("price") as string) || 0;
     const purchasePrice = parseInt(formData.get("purchasePrice") as string) || undefined;
     const barcode = formData.get("barcode") as string || undefined;
-    const imageUrl = formData.get("imageUrl") as string || undefined;
+    const stock = parseInt(formData.get("stock") as string);
+    const newStock = isNaN(stock) ? editingProduct.stock : stock;
     
     await db.products.update(editingProduct.id, {
       name,
@@ -146,8 +147,26 @@ function ProductsContent() {
       price,
       purchasePrice,
       barcode,
-      imageUrl
+      stock: newStock,
+      status: newStock === 0 ? "Rupture" : (newStock <= 10 ? "Stock Faible" : "En stock")
     });
+    
+    // Log adjustment if stock changed
+    if (newStock !== editingProduct.stock) {
+      const diff = newStock - editingProduct.stock;
+      await db.movements.add({
+        id: crypto.randomUUID(),
+        productId: editingProduct.id,
+        productName: name,
+        type: diff > 0 ? "in" : "out",
+        quantity: Math.abs(diff),
+        motif: "Ajustement manuel du stock",
+        date: new Date().toISOString(),
+        timestamp: Date.now(),
+        user: "Vous",
+        locationId: activeLocationId || undefined
+      });
+    }
     
     setEditingProduct(null);
   };
@@ -561,12 +580,12 @@ function ProductsContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">URL de l'image (optionnel)</label>
+                <label className="text-sm font-semibold text-slate-700">Quantité en stock</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <ImageIcon className="w-4 h-4 text-slate-400" />
+                    <Plus className="w-4 h-4 text-slate-400" />
                   </div>
-                  <input name="imageUrl" defaultValue={editingProduct.imageUrl || ""} type="url" placeholder="https://..." className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
+                  <input name="stock" defaultValue={editingProduct.stock} type="number" min="0" placeholder="0" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
                 </div>
               </div>
 
