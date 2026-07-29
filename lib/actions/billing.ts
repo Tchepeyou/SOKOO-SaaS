@@ -50,7 +50,11 @@ export async function createSubscriptionPayment(planId: string) {
       subId = sub.id;
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    let appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
+    if (!appUrl && process.env.VERCEL_URL) {
+      appUrl = `https://${process.env.VERCEL_URL}`;
+    }
+    appUrl = appUrl || "http://localhost:3000";
 
     const checkoutResult = await chariow.createCheckout({
       plan_id: planId,
