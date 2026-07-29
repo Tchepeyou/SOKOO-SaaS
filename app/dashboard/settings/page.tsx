@@ -39,6 +39,11 @@ function SettingsContent() {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
+          // Charger les préférences depuis user_metadata
+          const metadata = session.user.user_metadata || {};
+          if (metadata.smsAlerts !== undefined) setSmsAlerts(metadata.smsAlerts);
+          if (metadata.emailReports !== undefined) setEmailReports(metadata.emailReports);
+
           const { data: profile } = await supabase
             .from("profiles")
             .select(`
@@ -61,6 +66,20 @@ function SettingsContent() {
 
   const handleAction = (message: string) => {
     alert(message);
+  };
+
+  const updatePreference = async (key: 'smsAlerts' | 'emailReports', value: boolean) => {
+    if (key === 'smsAlerts') setSmsAlerts(value);
+    if (key === 'emailReports') setEmailReports(value);
+    
+    try {
+      const supabase = createClient();
+      await supabase.auth.updateUser({
+        data: { [key]: value }
+      });
+    } catch (error) {
+      console.error("Erreur de sauvegarde des préférences", error);
+    }
   };
 
   const handleSubscribe = (planId: string) => {
@@ -87,7 +106,7 @@ function SettingsContent() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
+    <div className="space-y-6 animate-in fade-in duration-500 w-full">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Paramètres</h2>
         <p className="text-slate-500">Gérez les informations de votre boutique et vos préférences.</p>
@@ -421,7 +440,7 @@ function SettingsContent() {
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={smsAlerts} onChange={(e) => setSmsAlerts(e.target.checked)} />
+                      <input type="checkbox" className="sr-only peer" checked={smsAlerts} onChange={(e) => updatePreference('smsAlerts', e.target.checked)} />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-blue"></div>
                     </label>
                   </div>
@@ -435,7 +454,7 @@ function SettingsContent() {
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={emailReports} onChange={(e) => setEmailReports(e.target.checked)} />
+                      <input type="checkbox" className="sr-only peer" checked={emailReports} onChange={(e) => updatePreference('emailReports', e.target.checked)} />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-blue"></div>
                     </label>
                   </div>

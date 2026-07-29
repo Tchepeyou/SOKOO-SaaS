@@ -56,8 +56,20 @@ export class ChariowClient {
       // Nettoyage et préparation du téléphone (requis par Chariow)
       let phoneNum = params.customer.phone || "0197000000";
       phoneNum = phoneNum.replace(/[^0-9]/g, ""); // Ne garder que les chiffres
-      if (phoneNum.startsWith("229") && phoneNum.length > 8) phoneNum = phoneNum.substring(3);
-      if (phoneNum.startsWith("237") && phoneNum.length > 9) phoneNum = phoneNum.substring(3);
+      
+      let determinedCountryCode = params.customer.country_code || "BJ";
+      if (phoneNum.startsWith("229") && phoneNum.length > 8) {
+        phoneNum = phoneNum.substring(3);
+        determinedCountryCode = "BJ";
+      }
+      if (phoneNum.startsWith("237") && phoneNum.length > 9) {
+        phoneNum = phoneNum.substring(3);
+        determinedCountryCode = "CM";
+      }
+      // Si c'est un numéro à 9 chiffres commençant par 6, on assume le Cameroun par défaut (CM)
+      if (phoneNum.length === 9 && phoneNum.startsWith("6")) {
+        determinedCountryCode = "CM";
+      }
 
       // Détermination du produit Chariow (via env ou par défaut sur un produit actif)
       let productId = params.product_id;
@@ -74,7 +86,7 @@ export class ChariowClient {
         last_name: lastName,
         phone: {
           number: phoneNum || "0197000000",
-          country_code: params.customer.country_code || "BJ"
+          country_code: determinedCountryCode
         },
         success_url: params.success_url,
         cancel_url: params.cancel_url,
