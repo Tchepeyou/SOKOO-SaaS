@@ -32,8 +32,10 @@ export async function createSubscriptionPayment(planId: string) {
     }
 
     let subId = "sub_" + Date.now();
-    // Création de l'enregistrement de l'abonnement en attente dans Supabase
-    const { data: sub, error: subError } = await supabase
+    // Création de l'enregistrement de l'abonnement en attente dans Supabase avec les droits admin
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const adminClient = createAdminClient();
+    const { data: sub, error: subError } = await adminClient
       .from("subscriptions")
       .insert({
         organization_id: profile.organization_id,
