@@ -89,8 +89,8 @@ export async function registerWithPassword(formData: FormData) {
 
   await ensureProfileAndOrganization(supabase, authData.user.id, formattedPhone);
 
-  revalidatePath("/dashboard", "layout");
-  redirect("/dashboard");
+  revalidatePath("/onboarding", "layout");
+  redirect("/onboarding");
 }
 
 export async function updateOnboarding(formData: FormData) {
