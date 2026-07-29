@@ -383,15 +383,6 @@ function ProductsContent() {
                           <input name="barcode" type="text" placeholder="Ex: 37000000000" className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">URL de l'image (optionnel)</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <ImageIcon className="w-4 h-4 text-slate-400" />
-                          </div>
-                          <input name="imageUrl" type="url" placeholder="https://..." className="w-full pl-9 pr-4 py-3 rounded-xl border-0 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-blue bg-white text-slate-900 outline-none" />
-                        </div>
-                      </div>
                     </div>
 
                     {/* Right Column */}
