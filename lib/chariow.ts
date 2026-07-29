@@ -88,13 +88,13 @@ export class ChariowClient {
           number: phoneNum || "0197000000",
           country_code: determinedCountryCode
         },
-        success_url: params.success_url,
-        cancel_url: params.cancel_url,
-        metadata: {
+        redirect_url: params.success_url, // Chariow utilise redirect_url au lieu de success_url/cancel_url
+        payment_currency: params.currency || "XAF",
+        custom_metadata: {
           ...params.metadata,
           plan_id: params.plan_id,
-          amount: params.amount,
-          currency: params.currency || "XOF"
+          expected_amount: params.amount,
+          cancel_url: params.cancel_url // Sauvegardé au cas où, bien que Chariow ne l'utilise pas directement
         }
       };
 
