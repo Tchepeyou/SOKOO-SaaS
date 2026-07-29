@@ -180,6 +180,7 @@ async function ensureProfileAndOrganization(supabase: any, userId: string, phone
       .update({
         organization_id: org.id,
         location_id: location?.id,
+        role: "owner",
       })
       .eq("id", userId);
       
