@@ -82,9 +82,9 @@ export class ChariowClient {
       // Détermination du produit Chariow (via env ou par défaut sur un produit actif)
       let productId = params.product_id;
       if (!productId) {
-        if (params.plan_id === "business") productId = process.env.CHARIOW_PRODUCT_BUSINESS || process.env.CHARIOW_PRODUCT_ID || "prd_beb34ymj";
-        else if (params.plan_id === "enterprise") productId = process.env.CHARIOW_PRODUCT_ENTERPRISE || process.env.CHARIOW_PRODUCT_ID || "prd_beb34ymj";
-        else productId = process.env.CHARIOW_PRODUCT_STARTER || process.env.CHARIOW_PRODUCT_ID || "prd_beb34ymj";
+        if (params.plan_id === "business") productId = process.env.CHARIOW_PRODUCT_BUSINESS || "prd_2s2s06kt";
+        else if (params.plan_id === "enterprise") productId = process.env.CHARIOW_PRODUCT_ENTERPRISE || "prd_beb34ymj";
+        else productId = process.env.CHARIOW_PRODUCT_STARTER || "prd_65xtc00f";
       }
 
       const payload: any = {
