@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase/server";
+import { getAdminAuth } from "@/lib/firebase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Vérifier le token avec Firebase Admin
+    const adminAuth = getAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const phone_number = decodedToken.phone_number;
 
