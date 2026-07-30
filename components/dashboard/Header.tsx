@@ -510,7 +510,15 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
                   setIsProfileOpen(false);
                   try {
                     setIsSyncing(true);
-                    await syncWithSupabase();
+                    const syncSuccess = await syncWithSupabase();
+                    
+                    if (!syncSuccess) {
+                      const confirmLogout = window.confirm("La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?");
+                      if (!confirmLogout) {
+                        setIsSyncing(false);
+                        return;
+                      }
+                    }
                     
                     // Clear local offline database to prevent data leaking
                     await Promise.all([

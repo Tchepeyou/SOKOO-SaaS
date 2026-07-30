@@ -29,17 +29,6 @@ export async function loginWithPassword(formData: FormData) {
 
   await ensureProfileAndOrganization(supabase, authData.user.id, formattedPhone);
 
-  const { data: adminData } = await supabase
-    .from("platform_admins")
-    .select("id")
-    .eq("id", authData.user.id)
-    .single();
-      
-  if (adminData) {
-    revalidatePath("/admin", "layout");
-    redirect("/admin");
-  }
-
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard");
 }

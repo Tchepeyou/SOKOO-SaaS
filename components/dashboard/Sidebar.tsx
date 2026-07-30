@@ -152,8 +152,13 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             onClick={async () => {
               try {
                 // Ensure local data is pushed to Supabase before logging out
-                await syncWithSupabase();
+                const syncSuccess = await syncWithSupabase();
                 
+                if (!syncSuccess) {
+                  const confirmLogout = window.confirm("La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?");
+                  if (!confirmLogout) return;
+                }
+
                 // Then clear local DB
                 await Promise.all([
                   db.products.clear(),

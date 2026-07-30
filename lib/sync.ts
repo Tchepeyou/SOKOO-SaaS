@@ -203,7 +203,10 @@ export async function syncWithSupabase() {
         })),
         { onConflict: 'id' }
       );
-      if (productsError) console.error("Erreur de synchronisation (Produits):", productsError);
+      if (productsError) {
+        console.error("Erreur de synchronisation (Produits):", productsError);
+        return false;
+      }
     }
 
     // 2. Synchroniser les Mouvements de stock
@@ -222,7 +225,10 @@ export async function syncWithSupabase() {
         })),
         { onConflict: 'client_generated_id' }
       );
-      if (movementsError) console.error("Erreur de synchronisation (Mouvements):", movementsError);
+      if (movementsError) {
+        console.error("Erreur de synchronisation (Mouvements):", movementsError);
+        return false;
+      }
     }
 
     // 3. Synchroniser les Ventes (Sales)
@@ -243,7 +249,10 @@ export async function syncWithSupabase() {
         })),
         { onConflict: 'client_generated_id' }
       );
-      if (salesError) console.error("Erreur de synchronisation (Ventes):", salesError);
+      if (salesError) {
+        console.error("Erreur de synchronisation (Ventes):", salesError);
+        return false;
+      }
     }
 
     // 4. Synchroniser les Lieux / Points de vente
