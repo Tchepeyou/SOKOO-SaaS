@@ -49,8 +49,12 @@ export default function FirebasePasswordReset() {
 
     try {
       const formattedPhone = formatPhoneNumber(phone);
+      
       if (!window.recaptchaVerifier) {
-        throw new Error("Recaptcha non initialisé");
+        if (recaptchaContainerRef.current) {
+          recaptchaContainerRef.current.innerHTML = '';
+        }
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current!, { size: "invisible" });
       }
 
       const result = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
@@ -61,8 +65,12 @@ export default function FirebasePasswordReset() {
       const errorMessage = err?.message || "Erreur inconnue";
       setError(`Erreur lors de l'envoi du SMS : ${errorMessage}`);
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current!, { size: "invisible" });
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.error("Erreur clear recaptcha", e);
+        }
+        window.recaptchaVerifier = undefined;
       }
     } finally {
       setLoading(false);
