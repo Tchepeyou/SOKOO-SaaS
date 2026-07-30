@@ -57,8 +57,9 @@ export default function FirebasePasswordReset() {
       setConfirmationResult(result);
       setStep("otp");
     } catch (err: any) {
-      console.error(err);
-      setError("Erreur lors de l'envoi du SMS. Vérifiez votre numéro.");
+      console.error("Firebase Auth Error:", err);
+      const errorMessage = err?.message || "Erreur inconnue";
+      setError(`Erreur lors de l'envoi du SMS : ${errorMessage}`);
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current!, { size: "invisible" });
