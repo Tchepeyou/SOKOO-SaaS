@@ -56,7 +56,7 @@ export default function LocationsPage() {
       setEditingLoc(null);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert("Une erreur est survenue lors de l'enregistrement de la boutique.");
+      alert(`Une erreur est survenue lors de l'enregistrement de la boutique : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     } finally {
       setIsLoading(false);
     }
