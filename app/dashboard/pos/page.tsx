@@ -6,6 +6,7 @@ import { db, Product, SaleItem, Sale } from "@/lib/db";
 import { Receipt } from "@/components/dashboard/Receipt";
 import { Search, Plus, Minus, Trash2, ShoppingCart, CheckCircle2, ReceiptText, Printer, ArrowRight, X, ImageIcon, Wallet, CreditCard, Smartphone, Banknote } from "lucide-react";
 import { useLocation } from "@/lib/contexts/LocationContext";
+import { toast } from "sonner";
 
 export default function POSPage() {
   const { activeLocationId } = useLocation();
@@ -176,7 +177,7 @@ export default function POSPage() {
       setShowSuccess(true);
     } catch (error) {
       console.error("Erreur lors de la vente:", error);
-      alert("Une erreur est survenue lors de l'enregistrement de la vente.");
+      toast.error("Une erreur est survenue lors de l'enregistrement de la vente.");
     } finally {
       setIsProcessing(false);
     }

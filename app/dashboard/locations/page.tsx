@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Location } from "@/lib/db";
 import { saveLocationToSupabase, deleteLocationFromSupabase } from "@/lib/actions/locations";
+import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function LocationsPage() {
   const locations = useLiveQuery(() => db.locations.reverse().toArray()) || [];
@@ -12,6 +14,7 @@ export default function LocationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoc, setEditingLoc] = useState<Location | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [locToDelete, setLocToDelete] = useState<string | null>(null);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,20 +59,24 @@ export default function LocationsPage() {
       setEditingLoc(null);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert(`Une erreur est survenue lors de l'enregistrement de la boutique : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+      toast.error(`Une erreur est survenue lors de l'enregistrement de la boutique : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Voulez-vous vraiment supprimer ce point de vente ?")) {
+    setLocToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (locToDelete) {
       try {
-        const res = await deleteLocationFromSupabase(id);
+        const res = await deleteLocationFromSupabase(locToDelete);
         if (res?.error) throw new Error(res.error);
 
-        await db.locations.delete(id);
+        await db.locations.delete(locToDelete);
         
         // If we deleted the main one, make the oldest remaining one main
         const remaining = await db.locations.toArray();
@@ -77,9 +84,12 @@ export default function LocationsPage() {
         if (remaining.length > 0 && !hasMain) {
           await db.locations.update(remaining[0].id!, { isMain: true });
         }
+        toast.success("Point de vente supprimé avec succès");
       } catch (error) {
         console.error("Erreur de suppression:", error);
-        alert("Impossible de supprimer la boutique pour le moment.");
+        toast.error("Impossible de supprimer la boutique pour le moment.");
+      } finally {
+        setLocToDelete(null);
       }
     }
   };
@@ -191,6 +201,16 @@ export default function LocationsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!locToDelete}
+        title="Supprimer le point de vente"
+        description="Voulez-vous vraiment supprimer ce point de vente ? Cette action est irréversible."
+        confirmText="Supprimer"
+        isDestructive={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setLocToDelete(null)}
+      />
     </>
   );
 }

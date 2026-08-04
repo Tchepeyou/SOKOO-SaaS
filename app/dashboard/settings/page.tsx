@@ -10,6 +10,7 @@ import SupportTickets from "@/components/dashboard/SupportTickets";
 import { useLocation } from "@/lib/contexts/LocationContext";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { toast } from "sonner";
 
 function SettingsContent() {
   const searchParams = useSearchParams();
@@ -73,7 +74,7 @@ function SettingsContent() {
   }, []);
 
   const handleAction = (message: string) => {
-    alert(message);
+    toast.info(message);
   };
 
   const updatePreference = async (key: 'smsAlerts' | 'emailReports', value: boolean) => {
@@ -96,7 +97,7 @@ function SettingsContent() {
       const actualPlanId = planId === 'premium' ? 'business' : planId;
       const result = await createSubscriptionPayment(actualPlanId);
       if (result?.error) {
-        alert(result.error);
+        toast.error(result.error);
         setLoadingPlan(null);
       } else if (result?.url) {
         window.location.href = result.url;

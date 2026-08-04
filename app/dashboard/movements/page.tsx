@@ -3,6 +3,7 @@
 import { Search, Filter, ArrowUpRight, ArrowDownRight, Download, X } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 
 import { useLocation } from "@/lib/contexts/LocationContext";
@@ -44,7 +45,7 @@ export default function MovementsPage() {
 
   const handleExportCSV = () => {
     if (filteredMovements.length === 0) {
-      alert("Aucune donnée à exporter.");
+      toast.info("Aucune donnée à exporter.");
       return;
     }
 
