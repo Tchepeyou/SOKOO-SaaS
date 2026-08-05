@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { MessageSquare, Mail, Search, Clock, CheckCircle2, ChevronRight, Send, User, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { MessageSquare, Mail, Search, Clock, CheckCircle2, ChevronRight, Send, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { replyToTicket, updateTicketStatus, fetchAdminTickets, fetchAdminMessages } from "@/lib/actions/support";
 
@@ -62,7 +61,7 @@ export default function AdminSupportContent() {
         openTicket(selectedTicket);
         fetchTickets(); // Refresh list to update status if needed
       } else {
-        toast.error(res?.error || "Erreur d'envoi");
+        alert(res?.error || "Erreur d'envoi");
       }
     });
   };
@@ -77,7 +76,7 @@ export default function AdminSupportContent() {
         setSelectedTicket({ ...selectedTicket, status: newStatus });
         fetchTickets();
       } else {
-        toast.error("Erreur de modification du statut");
+        alert("Erreur de modification du statut");
       }
     });
   };

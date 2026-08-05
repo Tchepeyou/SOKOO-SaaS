@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import ServiceWorkerCleanup from "@/components/ServiceWorkerCleanup";
-import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -39,7 +38,6 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased notranslate", inter.variable)} suppressHydrationWarning>
         {children}
-        <Toaster position="top-center" richColors expand={false} />
         <ServiceWorkerCleanup />
       </body>
     </html>

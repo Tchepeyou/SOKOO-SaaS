@@ -3,7 +3,6 @@
 import { AlertTriangle, CheckCircle2, PackagePlus, X } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Product } from "@/lib/db";
-import { toast } from "sonner";
 import { useState } from "react";
 
 import { useLocation } from "@/lib/contexts/LocationContext";
@@ -67,10 +66,9 @@ export default function AlertsPage() {
       });
 
       setRestockProduct(null);
-      toast.success("Réapprovisionnement effectué avec succès");
     } catch (error) {
       console.error("Erreur lors du réapprovisionnement", error);
-      toast.error("Une erreur est survenue lors du réapprovisionnement.");
+      alert("Une erreur est survenue lors du réapprovisionnement.");
     }
   };
 

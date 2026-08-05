@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { toast } from "sonner";
 import { Calendar, RefreshCw, MoreHorizontal } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 
@@ -52,7 +51,7 @@ export default function AdminDashboardClient({ initialMetrics, organizations, pa
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div 
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
-          onClick={() => toast.info("Le filtrage par date globale sera disponible prochainement.")}
+          onClick={() => alert("Le filtrage par date globale sera disponible prochainement.")}
         >
           <Calendar className="w-4 h-4 text-slate-500" />
           <span className="text-sm font-medium text-slate-700">1 Jan, 2024 - {dateStr}</span>
@@ -68,7 +67,7 @@ export default function AdminDashboardClient({ initialMetrics, organizations, pa
           </button>
           <button 
             type="button"
-            onClick={() => toast.info("Module de création de campagne Email/Marketing en cours de développement.")}
+            onClick={() => alert("Module de création de campagne Email/Marketing en cours de développement.")}
             className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm shadow-blue-600/20 transition-colors text-sm font-medium"
           >
             Créer une campagne

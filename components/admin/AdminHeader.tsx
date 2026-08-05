@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Bell, Mail } from "lucide-react";
-import { toast } from "sonner";
 
 export default function AdminHeader() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,7 +12,7 @@ export default function AdminHeader() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      toast.info(`Recherche en cours pour: ${searchQuery}`);
+      alert(`Recherche en cours pour: ${searchQuery}`);
       setSearchQuery("");
     }
   };
@@ -103,7 +102,7 @@ export default function AdminHeader() {
         <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
 
         {/* Profile */}
-        <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => toast.info("Menu Profil à venir")}>
+        <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => alert("Menu Profil à venir")}>
           <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 overflow-hidden flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
             <span className="font-bold">A</span>
           </div>

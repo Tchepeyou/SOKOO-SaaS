@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { MessageCircle, Plus, ChevronRight, X, Clock, Send } from "lucide-react";
-import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { createTicket, replyToTicket } from "@/lib/actions/support";
 import { useLocation } from "@/lib/contexts/LocationContext";
@@ -58,9 +57,8 @@ export default function SupportTickets() {
       if (res?.success) {
         setIsCreating(false);
         fetchTickets();
-        toast.success("Ticket créé avec succès");
       } else {
-        toast.error(res?.error || "Erreur de création");
+        alert(res?.error || "Erreur de création");
       }
     });
   };
@@ -76,7 +74,7 @@ export default function SupportTickets() {
         openTicket(selectedTicket);
         fetchTickets();
       } else {
-        toast.error(res?.error || "Erreur lors de l'envoi");
+        alert(res?.error || "Erreur");
       }
     });
   };

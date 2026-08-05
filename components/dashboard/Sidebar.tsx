@@ -22,7 +22,6 @@ import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import { syncWithSupabase } from "@/lib/sync";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -44,7 +43,6 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     async function fetchRole() {
@@ -157,14 +155,22 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                 const syncSuccess = await syncWithSupabase();
                 
                 if (!syncSuccess) {
-                  setShowLogoutConfirm(true);
-                  return;
+                  const confirmLogout = window.confirm("La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?");
+                  if (!confirmLogout) return;
                 }
 
-                await executeLogout();
+                // Then clear local DB
+                await Promise.all([
+                  db.products.clear(),
+                  db.sales.clear(),
+                  db.movements.clear(),
+                  db.locations.clear(),
+                  db.teamMembers.clear()
+                ]);
               } catch (e) {
-                console.error("Logout error", e);
+                console.error("Erreur lors de la synchronisation ou de la suppression locale", e);
               }
+              signOut();
             }}
             className="flex w-full items-center px-3 py-3 md:py-2.5 text-sm font-medium text-slate-400 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 mt-2"
           >
@@ -173,32 +179,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           </button>
         </div>
       </div>
-
-      <ConfirmModal
-        isOpen={showLogoutConfirm}
-        title="Déconnexion risquée"
-        description="La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?"
-        confirmText="Se déconnecter"
-        isDestructive={true}
-        onConfirm={async () => {
-          setShowLogoutConfirm(false);
-          await executeLogout();
-        }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </>
   );
-}
-
-async function executeLogout() {
-  try {
-    await Promise.all([
-      db.products.clear(),
-      db.sales.clear(),
-      db.movements.clear(),
-      db.locations.clear(),
-      db.teamMembers.clear()
-    ]);
-  } catch(e) {}
-  await signOut();
 }

@@ -5,8 +5,6 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, TeamMember } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import { createInvite } from "@/lib/actions/team";
-import { toast } from "sonner";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { 
   UserPlus, 
   MoreHorizontal, 
@@ -29,8 +27,6 @@ export default function TeamPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
-  
-  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   
   // For dropdown menu
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -82,16 +78,15 @@ export default function TeamPage() {
       } else {
         const result = await createInvite(formData);
         if (result.error) {
-          toast.error(result.error);
+          alert(result.error);
         } else if (result.inviteUrl) {
           setCreatedInviteUrl(result.inviteUrl);
           fetchInvites();
-          toast.success("Invitation créée !");
         }
       }
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      toast.error("Une erreur est survenue.");
+      alert("Une erreur est survenue.");
     } finally {
       setIsSubmitting(false);
     }
@@ -108,16 +103,10 @@ export default function TeamPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    setMemberToDelete(id);
-    setActiveDropdown(null);
-  };
-
-  const confirmDelete = async () => {
-    if (memberToDelete) {
-      await db.teamMembers.delete(memberToDelete);
-      setMemberToDelete(null);
-      toast.success("Membre retiré de l'équipe");
+  const handleDelete = async (id: string) => {
+    if (confirm("Voulez-vous vraiment retirer ce membre de l'équipe ?")) {
+      await db.teamMembers.delete(id);
+      setActiveDropdown(null);
     }
   };
 
@@ -328,16 +317,6 @@ export default function TeamPage() {
           </div>
         </div>
       )}
-
-      <ConfirmModal
-        isOpen={!!memberToDelete}
-        title="Retirer le membre"
-        description="Voulez-vous vraiment retirer ce membre de l'équipe ?"
-        confirmText="Retirer"
-        isDestructive={true}
-        onConfirm={confirmDelete}
-        onCancel={() => setMemberToDelete(null)}
-      />
     </>
   );
 }
