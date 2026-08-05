@@ -5,6 +5,7 @@ import { MessageCircle, Plus, ChevronRight, X, Clock, Send } from "lucide-react"
 import { createClient } from "@/lib/supabase/client";
 import { createTicket, replyToTicket } from "@/lib/actions/support";
 import { useLocation } from "@/lib/contexts/LocationContext";
+import { toast } from "sonner";
 
 export default function SupportTickets() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -58,7 +59,7 @@ export default function SupportTickets() {
         setIsCreating(false);
         fetchTickets();
       } else {
-        alert(res?.error || "Erreur de création");
+        toast.error(res?.error || "Erreur de création");
       }
     });
   };
@@ -74,7 +75,7 @@ export default function SupportTickets() {
         openTicket(selectedTicket);
         fetchTickets();
       } else {
-        alert(res?.error || "Erreur");
+        toast.error(res?.error || "Erreur");
       }
     });
   };

@@ -21,6 +21,7 @@ import { signOut } from "@/lib/actions/sign-out";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import { syncWithSupabase } from "@/lib/sync";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -41,7 +42,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>("owner");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     async function fetchRole() {
@@ -61,12 +63,45 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             }
           }
         }
-      } catch (e) {
-        console.error("Error fetching role:", e);
+      } catch (error) {
+        console.error("Erreur de récupération du rôle", error);
       }
     }
     fetchRole();
   }, []);
+
+  const executeLogout = async () => {
+    setShowLogoutConfirm(false);
+    try {
+      // Clear local offline database to prevent data leaking
+      await Promise.all([
+        db.products.clear(),
+        db.sales.clear(),
+        db.movements.clear(),
+        db.locations.clear(),
+        db.teamMembers.clear()
+      ]);
+    } catch (e) {
+      console.error("Erreur lors de la suppression locale", e);
+    }
+    signOut();
+  };
+
+  const handleLogoutClick = async () => {
+    try {
+      const syncSuccess = await syncWithSupabase();
+      
+      if (!syncSuccess) {
+        setShowLogoutConfirm(true);
+        return;
+      }
+      
+      await executeLogout();
+    } catch (e) {
+      console.error("Erreur lors de la synchronisation", e);
+      signOut();
+    }
+  };
 
   const filteredNavigation = navigation.filter(item => {
     if (!role) return item.href === "/dashboard/pos"; // Default while loading
@@ -147,29 +182,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         
         <div className="mt-auto px-4 pb-4">
           <button 
-            onClick={async () => {
-              try {
-                // Ensure local data is pushed to Supabase before logging out
-                const syncSuccess = await syncWithSupabase();
-                
-                if (!syncSuccess) {
-                  const confirmLogout = window.confirm("La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?");
-                  if (!confirmLogout) return;
-                }
-
-                // Then clear local DB
-                await Promise.all([
-                  db.products.clear(),
-                  db.sales.clear(),
-                  db.movements.clear(),
-                  db.locations.clear(),
-                  db.teamMembers.clear()
-                ]);
-              } catch (e) {
-                console.error("Erreur lors de la synchronisation ou de la suppression locale", e);
-              }
-              signOut();
-            }}
+            onClick={handleLogoutClick}
             className="flex w-full items-center px-3 py-3 md:py-2.5 text-sm font-medium text-slate-400 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 mt-2"
           >
             <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -177,6 +190,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           </button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Déconnexion (Données non synchronisées)"
+        description="La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?"
+        confirmText="Se déconnecter"
+        isDestructive={true}
+        onConfirm={executeLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useTransition } from "react";
+import { toast } from "sonner";
 import { Store, CreditCard, BellRing, Shield, Check, Smartphone, Mail, Key, Plus, MapPin, Package, Edit, Trash2, MessageCircle, ArrowRight, X, ChevronDown, User } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { updateUserProfile } from "@/lib/actions/profile";
@@ -73,7 +74,7 @@ function SettingsContent() {
   }, []);
 
   const handleAction = (message: string) => {
-    alert(message);
+    toast.info(message);
   };
 
   const updatePreference = async (key: 'smsAlerts' | 'emailReports', value: boolean) => {
@@ -96,7 +97,7 @@ function SettingsContent() {
       const actualPlanId = planId === 'premium' ? 'business' : planId;
       const result = await createSubscriptionPayment(actualPlanId);
       if (result?.error) {
-        alert(result.error);
+        toast.error(result.error);
         setLoadingPlan(null);
       } else if (result?.url) {
         window.location.href = result.url;

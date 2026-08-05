@@ -5,6 +5,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, TeamMember } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import { createInvite } from "@/lib/actions/team";
+import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { 
   UserPlus, 
   MoreHorizontal, 
@@ -27,6 +29,7 @@ export default function TeamPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
+  const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null);
   
   // For dropdown menu
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export default function TeamPage() {
       } else {
         const result = await createInvite(formData);
         if (result.error) {
-          alert(result.error);
+          toast.error(result.error);
         } else if (result.inviteUrl) {
           setCreatedInviteUrl(result.inviteUrl);
           fetchInvites();
@@ -86,7 +89,7 @@ export default function TeamPage() {
       }
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert("Une erreur est survenue.");
+      toast.error("Une erreur est survenue.");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,10 +106,21 @@ export default function TeamPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Voulez-vous vraiment retirer ce membre de l'équipe ?")) {
-      await db.teamMembers.delete(id);
-      setActiveDropdown(null);
+  const handleDeleteClick = (id: string) => {
+    setDeleteMemberId(id);
+    setActiveDropdown(null);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteMemberId) return;
+    try {
+      await db.teamMembers.delete(deleteMemberId);
+      toast.success("Membre retiré avec succès.");
+    } catch (error) {
+      console.error("Erreur de suppression:", error);
+      toast.error("Une erreur est survenue.");
+    } finally {
+      setDeleteMemberId(null);
     }
   };
 
@@ -182,6 +196,9 @@ export default function TeamPage() {
                       className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-blue transition-colors flex items-center gap-2"
                     >
                       <Edit className="w-4 h-4" /> Modifier
+                    </button>
+                    <button onClick={() => handleDeleteClick(member.id!)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                      <Trash2 className="w-4 h-4" /> Retirer
                     </button>
                     <button 
                       onClick={() => toggleStatus(member)}
@@ -317,6 +334,16 @@ export default function TeamPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteMemberId}
+        title="Retirer ce membre"
+        description="Voulez-vous vraiment retirer ce membre de l'équipe ? Il n'aura plus accès à la boutique."
+        confirmText="Retirer"
+        isDestructive={true}
+        onConfirm={executeDelete}
+        onCancel={() => setDeleteMemberId(null)}
+      />
     </>
   );
 }

@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { syncWithSupabase } from "@/lib/sync";
 import { createClient } from "@/lib/supabase/client";
 import { Cloud, CloudOff, RefreshCw } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 import { useLocation } from "@/lib/contexts/LocationContext";
 
@@ -23,6 +24,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -196,6 +198,42 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
     lowStockProducts.forEach(p => newDismissed.add(p.id));
     setDismissedIds(newDismissed);
     setSystemNotifications([]);
+  };
+
+  const executeLogout = async () => {
+    setShowLogoutConfirm(false);
+    try {
+      // Clear local offline database to prevent data leaking
+      await Promise.all([
+        db.products.clear(),
+        db.sales.clear(),
+        db.movements.clear(),
+        db.locations.clear(),
+        db.teamMembers.clear()
+      ]);
+    } catch (e) {
+      console.error("Erreur lors de la suppression locale", e);
+    }
+    signOut();
+  };
+
+  const handleLogoutClick = async () => {
+    setIsProfileOpen(false);
+    try {
+      setIsSyncing(true);
+      const syncSuccess = await syncWithSupabase();
+      
+      if (!syncSuccess) {
+        setShowLogoutConfirm(true);
+        setIsSyncing(false);
+        return;
+      }
+      
+      await executeLogout();
+    } catch (e) {
+      console.error("Erreur lors de la synchronisation", e);
+      signOut();
+    }
   };
 
   return (
@@ -506,33 +544,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
               </a>
               <div className="border-t border-slate-100 my-1"></div>
               <button 
-                onClick={async () => {
-                  setIsProfileOpen(false);
-                  try {
-                    setIsSyncing(true);
-                    const syncSuccess = await syncWithSupabase();
-                    
-                    if (!syncSuccess) {
-                      const confirmLogout = window.confirm("La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?");
-                      if (!confirmLogout) {
-                        setIsSyncing(false);
-                        return;
-                      }
-                    }
-                    
-                    // Clear local offline database to prevent data leaking
-                    await Promise.all([
-                      db.products.clear(),
-                      db.sales.clear(),
-                      db.movements.clear(),
-                      db.locations.clear(),
-                      db.teamMembers.clear()
-                    ]);
-                  } catch (e) {
-                    console.error("Erreur lors de la synchronisation ou de la suppression locale", e);
-                  }
-                  signOut();
-                }}
+                onClick={handleLogoutClick}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -542,6 +554,15 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           )}
         </div>
       </div>
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Déconnexion (Données non synchronisées)"
+        description="La synchronisation a échoué. Si vous vous déconnectez, vos données non sauvegardées seront définitivement perdues. Voulez-vous vraiment vous déconnecter ?"
+        confirmText="Se déconnecter"
+        isDestructive={true}
+        onConfirm={executeLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   );
 }

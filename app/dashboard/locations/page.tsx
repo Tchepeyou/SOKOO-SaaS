@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Location } from "@/lib/db";
 import { saveLocationToSupabase, deleteLocationFromSupabase } from "@/lib/actions/locations";
+import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function LocationsPage() {
   const locations = useLiveQuery(() => db.locations.reverse().toArray()) || [];
@@ -12,6 +14,7 @@ export default function LocationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoc, setEditingLoc] = useState<Location | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteLocId, setDeleteLocId] = useState<string | null>(null);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,31 +59,37 @@ export default function LocationsPage() {
       setEditingLoc(null);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert(`Une erreur est survenue lors de l'enregistrement de la boutique : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+      toast.error(`Une erreur est survenue lors de l'enregistrement de la boutique : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Voulez-vous vraiment supprimer ce point de vente ?")) {
-      try {
-        const res = await deleteLocationFromSupabase(id);
-        if (res?.error) throw new Error(res.error);
+    setDeleteLocId(id);
+  };
 
-        await db.locations.delete(id);
-        
-        // If we deleted the main one, make the oldest remaining one main
-        const remaining = await db.locations.toArray();
-        const hasMain = remaining.some(loc => loc.isMain);
-        if (remaining.length > 0 && !hasMain) {
-          await db.locations.update(remaining[0].id!, { isMain: true });
-        }
-      } catch (error) {
-        console.error("Erreur de suppression:", error);
-        alert("Impossible de supprimer la boutique pour le moment.");
+  const executeDelete = async () => {
+    if (!deleteLocId) return;
+    try {
+      const res = await deleteLocationFromSupabase(deleteLocId);
+      if (res?.error) throw new Error(res.error);
+
+      await db.locations.delete(deleteLocId);
+      
+      // If we deleted the main one, make the oldest remaining one main
+      const remaining = await db.locations.toArray();
+      const hasMain = remaining.some(loc => loc.isMain);
+      if (remaining.length > 0 && !hasMain) {
+        await db.locations.update(remaining[0].id!, { isMain: true });
       }
+      toast.success("Point de vente supprimé avec succès.");
+    } catch (error) {
+      console.error("Erreur de suppression:", error);
+      toast.error("Impossible de supprimer la boutique pour le moment.");
+    } finally {
+      setDeleteLocId(null);
     }
   };
 
@@ -120,11 +129,11 @@ export default function LocationsPage() {
                     Principal
                   </span>
                 )}
-                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => handleEdit(loc, e)} className="p-1.5 text-slate-400 hover:text-brand-blue bg-slate-50 hover:bg-blue-50 rounded-lg transition-colors">
+                <div className="flex gap-2">
+                  <button onClick={(e) => handleEdit(loc, e)} className="p-2 text-slate-400 hover:text-brand-dark bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors">
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button onClick={(e) => handleDelete(loc.id!, e)} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={(e) => handleDeleteClick(loc.id!, e)} className="p-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -191,6 +200,16 @@ export default function LocationsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteLocId}
+        title="Supprimer la boutique"
+        description="Voulez-vous vraiment supprimer ce point de vente ? Cette action est irréversible et supprimera également les données associées à cette boutique."
+        confirmText="Supprimer"
+        isDestructive={true}
+        onConfirm={executeDelete}
+        onCancel={() => setDeleteLocId(null)}
+      />
     </>
   );
 }
