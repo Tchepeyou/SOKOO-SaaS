@@ -21,7 +21,6 @@ import { signOut } from "@/lib/actions/sign-out";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import { syncWithSupabase } from "@/lib/sync";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -147,7 +146,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         </div>
         
         <div className="mt-auto px-4 pb-4">
-          <PWAInstallPrompt />
           <button 
             onClick={async () => {
               try {
