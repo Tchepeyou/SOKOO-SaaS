@@ -2,27 +2,33 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function getAdminMetrics(cacManual: number = 0) {
+export async function getAdminMetrics(cacManual: number = 0, days?: number) {
   const supabase = createAdminClient();
 
   // 1. Get all organizations
-  const { data: orgs } = await supabase
-    .from("organizations")
-    .select("id, name, created_at");
+  let orgsQuery = supabase.from("organizations").select("id, name, created_at");
+  const now = new Date();
+  
+  if (days) {
+    const startOfPeriod = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    orgsQuery = orgsQuery.gte("created_at", startOfPeriod.toISOString());
+  }
+  
+  const { data: orgs } = await orgsQuery;
 
   // 2. Get subscriptions to calculate MRR and Churn
-  // For MRR, we sum up active subscriptions based on their plan
   const { data: subs } = await supabase
     .from("subscriptions")
     .select("*");
 
   let mrr = 0;
   let activeSubs = 0;
-  let canceledThisMonth = 0;
-  let activeStartOfMonth = 0;
+  let canceledThisPeriod = 0;
+  let activeStartOfPeriod = 0;
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfPeriod = days 
+    ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+    : new Date(now.getFullYear(), now.getMonth(), 1); // fallback to start of month
 
   if (subs) {
     subs.forEach((sub: any) => {
@@ -37,28 +43,28 @@ export async function getAdminMetrics(cacManual: number = 0) {
       // Calculate Churn stats
       const createdDate = new Date(sub.created_at);
       if (sub.status === "canceled") {
-        if (new Date(sub.current_period_end) >= startOfMonth || createdDate >= startOfMonth) {
-          canceledThisMonth++;
+        if (new Date(sub.current_period_end) >= startOfPeriod || createdDate >= startOfPeriod) {
+          canceledThisPeriod++;
         }
       }
       
-      if (createdDate < startOfMonth && sub.status !== "canceled") {
-        activeStartOfMonth++;
+      if (createdDate < startOfPeriod && sub.status !== "canceled") {
+        activeStartOfPeriod++;
       }
     });
   }
 
-  // Monthly Churn Rate
-  const churnRate = activeStartOfMonth > 0 ? (canceledThisMonth / activeStartOfMonth) * 100 : 0;
+  // Churn Rate
+  const churnRate = activeStartOfPeriod > 0 ? (canceledThisPeriod / activeStartOfPeriod) * 100 : 0;
 
-  // New customers this month
-  let newCustomersThisMonth = 0;
+  // New customers this period
+  let newCustomersThisPeriod = 0;
   if (subs) {
-    newCustomersThisMonth = subs.filter((s: any) => new Date(s.created_at) >= startOfMonth && s.status === "active").length;
+    newCustomersThisPeriod = subs.filter((s: any) => new Date(s.created_at) >= startOfPeriod && s.status === "active").length;
   }
 
   // CAC
-  const cac = newCustomersThisMonth > 0 ? cacManual / newCustomersThisMonth : 0;
+  const cac = newCustomersThisPeriod > 0 ? cacManual / newCustomersThisPeriod : 0;
 
   // ARPU
   const arpu = activeSubs > 0 ? mrr / activeSubs : 0;
@@ -70,44 +76,77 @@ export async function getAdminMetrics(cacManual: number = 0) {
   // LTV:CAC Ratio
   const ltvCacRatio = cac > 0 ? ltv / cac : 0;
 
-  // Generate Chart Data (Last 6 months)
-  const monthNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+  // Generate Chart Data (Last 6 months/periods based on days? For chart, let's keep it 6 months or 7 days)
   const chartData = [];
   
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthStr = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-    const endOfThatMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+  if (days && days <= 90) {
+    // Generate daily chart for the last 'days' (if it's 7 or 30 days)
+    const step = days > 30 ? Math.ceil(days / 15) : 1; // Group by multiple days if large
     
-    let monthMrr = 0;
-    let monthUsers = 0;
-    
-    if (subs) {
-      subs.forEach((sub: any) => {
-        const createdDate = new Date(sub.created_at);
-        if (createdDate <= endOfThatMonth) {
-          if (sub.status === "active" || (sub.status === "canceled" && new Date(sub.current_period_end) > endOfThatMonth)) {
-            monthUsers++;
-            if (sub.plan === "starter") monthMrr += 5000;
-            else if (sub.plan === "business") monthMrr += 15000;
+    for (let i = days - 1; i >= 0; i -= step) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dayStr = d.toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' });
+      const startOfDay = new Date(d.setHours(0,0,0,0));
+      const endOfDay = new Date(d.getTime() + (step - 1) * 24 * 60 * 60 * 1000);
+      endOfDay.setHours(23,59,59,999);
+      
+      let dayMrr = 0;
+      let dayUsers = 0;
+      
+      if (subs) {
+        subs.forEach((sub: any) => {
+          const createdDate = new Date(sub.created_at);
+          if (createdDate <= endOfDay) {
+            if (sub.status === "active" || (sub.status === "canceled" && new Date(sub.current_period_end) > endOfDay)) {
+              dayUsers++;
+              if (sub.plan === "starter") dayMrr += 5000;
+              else if (sub.plan === "business") dayMrr += 15000;
+            }
           }
-        }
+        });
+      }
+      
+      chartData.push({
+        name: dayStr,
+        MRR: dayMrr,
+        Utilisateurs: dayUsers
       });
     }
-    
-    // Inject realistic mock data for past months if it's a completely fresh DB, 
-    // just so the chart isn't completely flat for the demo.
-    // In production, you would remove this mock injection.
-    if (monthUsers === 0 && i > 0 && subs?.length === 0) {
-       monthUsers = Math.max(1, 15 - i * 3); 
-       monthMrr = monthUsers * 5000;
+  } else {
+    // Generate monthly chart
+    const monthNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStr = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      const endOfThatMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      let monthMrr = 0;
+      let monthUsers = 0;
+      
+      if (subs) {
+        subs.forEach((sub: any) => {
+          const createdDate = new Date(sub.created_at);
+          if (createdDate <= endOfThatMonth) {
+            if (sub.status === "active" || (sub.status === "canceled" && new Date(sub.current_period_end) > endOfThatMonth)) {
+              monthUsers++;
+              if (sub.plan === "starter") monthMrr += 5000;
+              else if (sub.plan === "business") monthMrr += 15000;
+            }
+          }
+        });
+      }
+      
+      if (monthUsers === 0 && i > 0 && subs?.length === 0) {
+         monthUsers = Math.max(1, 15 - i * 3); 
+         monthMrr = monthUsers * 5000;
+      }
+      
+      chartData.push({
+        name: monthStr,
+        MRR: monthMrr,
+        Utilisateurs: monthUsers
+      });
     }
-    
-    chartData.push({
-      name: monthStr,
-      MRR: monthMrr,
-      Utilisateurs: monthUsers
-    });
   }
 
   return {
@@ -118,14 +157,14 @@ export async function getAdminMetrics(cacManual: number = 0) {
     ltvCacRatio,
     activeSubs,
     totalOrgs: orgs?.length || 0,
-    newCustomersThisMonth,
+    newCustomersThisMonth: newCustomersThisPeriod,
     chartData
   };
 }
 
-export async function getAdminOrganizations() {
+export async function getAdminOrganizations(days?: number) {
   const supabase = createAdminClient();
-  const { data: orgs } = await supabase
+  let query = supabase
     .from("organizations")
     .select(`
       id, name, created_at,
@@ -135,24 +174,39 @@ export async function getAdminOrganizations() {
     `)
     .order("created_at", { ascending: false });
 
+  if (days) {
+    const now = new Date();
+    const startOfPeriod = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    query = query.gte("created_at", startOfPeriod.toISOString());
+  }
+
+  const { data: orgs } = await query;
+
   return (orgs || []).map((org: any) => ({
     ...org,
     subscription_status: org.subscriptions && org.subscriptions.length > 0 ? org.subscriptions[0].status : "trialing"
   }));
 }
 
-export async function getAdminPayments() {
+export async function getAdminPayments(days?: number) {
   const supabase = createAdminClient();
-  const { data: subs } = await supabase
+  let query = supabase
     .from("subscriptions")
     .select("*, organizations(name)")
     .order("created_at", { ascending: false })
     .limit(50);
   
+  if (days) {
+    const now = new Date();
+    const startOfPeriod = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    query = query.gte("created_at", startOfPeriod.toISOString());
+  }
+
+  const { data: subs } = await query;
   return subs || [];
 }
 
-export async function getHealthRisks() {
+export async function getHealthRisks(days?: number) {
   const supabase = createAdminClient();
   
   const { data: orgs } = await supabase
@@ -175,7 +229,7 @@ export async function getHealthRisks() {
       const diffTime = Math.abs(now.getTime() - created.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (14 - diffDays <= 3) {
+      if (14 - diffDays <= 3 && 14 - diffDays >= 0) {
         risks.push({
           type: "TRIAL_ENDING",
           orgName: org.name,
