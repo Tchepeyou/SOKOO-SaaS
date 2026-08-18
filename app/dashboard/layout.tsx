@@ -51,39 +51,91 @@ export default function DashboardLayout({
 
         const userId = data.session.user.id;
         
-        // Attendre que Dexie soit potentiellement initialisé
+        let isTrialExpired = false;
+        let role = null;
+
         const member = await db.teamMembers.get(userId);
+        if (member) {
+          role = member.role;
+        }
         
-        if (!member) {
-          // Si on ne trouve pas le membre localement (ex: premier chargement),
-          // on fetch depuis supabase pour être sûr
-          const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-          
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select(`
+              role,
+              organizations (
+                created_at,
+                subscriptions (
+                  status
+                )
+              )
+            `)
+            .eq('id', userId)
+            .single();
+
+          console.log("PROFILE DATA:", JSON.stringify(profile));
           if (profile) {
-            handleRoleRedirect(profile.role);
-          } else {
-            setIsAuthorized(true); // Fallback
+            if (!role) role = profile.role;
+            const org: any = profile.organizations;
+            if (org) {
+              const hasActiveSub = org.subscriptions && Array.isArray(org.subscriptions) && org.subscriptions.some((s: any) => s.status === 'active');
+              console.log("hasActiveSub:", hasActiveSub);
+              if (!hasActiveSub) {
+                let trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date(new Date(org.created_at).getTime() + 14 * 24 * 60 * 60 * 1000);
+                console.log("trialEndsAt:", trialEndsAt, "now:", new Date());
+                if (trialEndsAt.getTime() < new Date().getTime()) {
+                  isTrialExpired = true;
+                  console.log("IS TRIAL EXPIRED SET TO TRUE!");
+                }
+              }
+            }
           }
+        } catch (fetchError) {
+          console.warn("Could not fetch subscription status from Supabase (offline?)", fetchError);
+        }
+
+        if (!role) {
+          console.log("No role, fallback to true");
+          setIsAuthorized(true); // Fallback
           return;
         }
 
-        handleRoleRedirect(member.role);
+        console.log("Calling handleRoleRedirect with role:", role, "isTrialExpired:", isTrialExpired);
+        handleRoleRedirect(role, isTrialExpired);
       } catch (e) {
         console.error("RoleGuard error:", e);
         setIsAuthorized(true); // Fallback
       }
     }
 
-    function handleRoleRedirect(role: string) {
-      if (role === 'employee' || role === 'Vendeur') {
-        if (pathname !== '/dashboard/pos' && pathname !== '/dashboard/sales') {
-          router.push("/dashboard/pos");
-          return;
+    function handleRoleRedirect(role: string, isTrialExpired: boolean = false) {
+      console.log("Inside handleRoleRedirect. role:", role, "isTrialExpired:", isTrialExpired, "pathname:", pathname);
+      if (isTrialExpired) {
+        if (role === 'admin' || role === 'owner' || role === 'Propriétaire' || role === 'Administrateur') {
+           if (pathname !== '/dashboard/settings') {
+             console.log("Redirecting owner to settings");
+             router.push("/dashboard/settings?tab=Abonnement&expired=true");
+             return;
+           }
+        } else {
+           if (pathname !== '/dashboard/expired') {
+             console.log("Redirecting employee to expired");
+             router.push("/dashboard/expired");
+             return;
+           }
         }
-      } else if (role === 'manager' || role === 'Superviseur') {
-        if (pathname.startsWith('/dashboard/team') || pathname.startsWith('/dashboard/settings')) {
-          router.push("/dashboard");
-          return;
+      } else {
+        if (role === 'employee' || role === 'Vendeur') {
+          if (pathname !== '/dashboard/pos' && pathname !== '/dashboard/sales') {
+            router.push("/dashboard/pos");
+            return;
+          }
+        } else if (role === 'manager' || role === 'Superviseur') {
+          if (pathname.startsWith('/dashboard/team') || pathname.startsWith('/dashboard/settings')) {
+            router.push("/dashboard");
+            return;
+          }
         }
       }
       setIsAuthorized(true);
