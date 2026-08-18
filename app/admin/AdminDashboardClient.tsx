@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { 
   Building2, 
   Users, 
@@ -25,10 +26,53 @@ const sparklineData3 = [{ value: 10 }, { value: 15 }, { value: 12 }, { value: 20
 
 const COLORS = ['#2563EB', '#F59E0B', '#10B981'];
 
-export default function AdminDashboardClient({ initialMetrics, organizations, payments, risks }: any) {
-  // Use today's date for the date picker mock
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', year: 'numeric' });
+export default function AdminDashboardClient({ initialMetrics, organizations, payments, risks, currentStartDate, currentEndDate }: any) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Format display date
+  let dateStr = "Toutes les dates";
+  if (currentStartDate && currentEndDate) {
+    const sDate = new Date(currentStartDate).toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', year: 'numeric' });
+    const eDate = new Date(currentEndDate).toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', year: 'numeric' });
+    dateStr = `${sDate} - ${eDate}`;
+  } else if (currentStartDate) {
+    const sDate = new Date(currentStartDate).toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', year: 'numeric' });
+    dateStr = `Depuis ${sDate}`;
+  } else {
+    // If no filter, the backend calculates all time or default (for chart it's 6 months, for MRR it's current)
+    dateStr = "Données globales / Toutes les dates";
+  }
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success("Données actualisées !");
+    }, 800);
+  };
+
+  const handleDateSelect = (days: number | null) => {
+    setShowDatePicker(false);
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (days === null) {
+      params.delete('start');
+      params.delete('end');
+    } else {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - days);
+      params.set('start', start.toISOString());
+      params.set('end', end.toISOString());
+    }
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   // Calculate dynamic pie data from organizations
   const pieData = useMemo(() => {
@@ -64,20 +108,36 @@ export default function AdminDashboardClient({ initialMetrics, organizations, pa
     <div className="space-y-6 pb-12">
       {/* Top Actions Row */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div 
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
-          onClick={() => toast.info("Le filtrage par date globale sera disponible prochainement.")}
-        >
-          <Calendar className="w-4 h-4 text-slate-500" />
-          <span className="text-sm font-medium text-slate-700">1 Jan, 2024 - {dateStr}</span>
+        <div className="relative">
+          <div 
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+          >
+            <Calendar className="w-4 h-4 text-slate-500" />
+            <span className="text-sm font-medium text-slate-700">{dateStr}</span>
+          </div>
+          
+          {showDatePicker && (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="py-1">
+                <button onClick={() => handleDateSelect(null)} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Toutes les dates</button>
+                <button onClick={() => handleDateSelect(7)} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">7 derniers jours</button>
+                <button onClick={() => handleDateSelect(30)} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">30 derniers jours</button>
+                <button onClick={() => handleDateSelect(90)} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">90 derniers jours</button>
+                <button onClick={() => handleDateSelect(365)} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Cette année</button>
+              </div>
+            </div>
+          )}
         </div>
+
         <div className="flex items-center gap-3">
           <button 
             type="button"
-            onClick={() => window.location.reload()}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700 disabled:opacity-50"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>Actualiser</span>
           </button>
           <button 
@@ -101,7 +161,7 @@ export default function AdminDashboardClient({ initialMetrics, organizations, pa
           color="#2563EB"
         />
         <SparklineCard 
-          title="Nouveaux Clients (Mois)" 
+          title="Nouveaux Clients" 
           value={initialMetrics.newCustomersThisMonth?.toLocaleString("fr-FR") || "0"}
           percent={initialMetrics.newCustomersThisMonth > 0 ? "+22.4%" : "0%"}
           trend={initialMetrics.newCustomersThisMonth > 0 ? "up" : "down"}

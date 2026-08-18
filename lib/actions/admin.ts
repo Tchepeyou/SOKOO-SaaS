@@ -2,19 +2,20 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function getAdminMetrics(cacManual: number = 0) {
+export async function getAdminMetrics(cacManual: number = 0, startDateStr?: string, endDateStr?: string) {
   const supabase = createAdminClient();
 
-  // 1. Get all organizations
-  const { data: orgs } = await supabase
-    .from("organizations")
-    .select("id, name, created_at");
+  // 1. Get all organizations for total count
+  const { data: allOrgs } = await supabase.from("organizations").select("id, name, created_at");
+  
+  // 1b. Get filtered organizations for the specific period (for charts, tables if needed)
+  let orgsQuery = supabase.from("organizations").select("id, name, created_at");
+  if (startDateStr) orgsQuery = orgsQuery.gte("created_at", startDateStr);
+  if (endDateStr) orgsQuery = orgsQuery.lte("created_at", endDateStr);
+  const { data: filteredOrgs } = await orgsQuery;
 
   // 2. Get subscriptions to calculate MRR and Churn
-  // For MRR, we sum up active subscriptions based on their plan
-  const { data: subs } = await supabase
-    .from("subscriptions")
-    .select("*");
+  const { data: subs } = await supabase.from("subscriptions").select("*");
 
   let mrr = 0;
   let activeSubs = 0;
@@ -22,19 +23,24 @@ export async function getAdminMetrics(cacManual: number = 0) {
   let activeStartOfMonth = 0;
 
   const now = new Date();
+  
+  // If dates are provided, use them as the "period" for new customers, otherwise use current month
+  const periodStart = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodEnd = endDateStr ? new Date(endDateStr) : now;
+
+  // Use start of month for churn calculations (usually monthly)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   if (subs) {
     subs.forEach((sub: any) => {
-      // Calculate MRR
+      // Calculate current MRR (global, not filtered)
       if (sub.status === "active") {
         activeSubs++;
         if (sub.plan === "starter") mrr += 5000;
         else if (sub.plan === "business") mrr += 15000;
-        // Enterprise is custom, so we might need a custom MRR field later
       }
 
-      // Calculate Churn stats
+      // Calculate Churn stats (global monthly)
       const createdDate = new Date(sub.created_at);
       if (sub.status === "canceled") {
         if (new Date(sub.current_period_end) >= startOfMonth || createdDate >= startOfMonth) {
@@ -51,26 +57,29 @@ export async function getAdminMetrics(cacManual: number = 0) {
   // Monthly Churn Rate
   const churnRate = activeStartOfMonth > 0 ? (canceledThisMonth / activeStartOfMonth) * 100 : 0;
 
-  // New customers this month
-  let newCustomersThisMonth = 0;
+  // New customers in the selected period
+  let newCustomersThisPeriod = 0;
   if (subs) {
-    newCustomersThisMonth = subs.filter((s: any) => new Date(s.created_at) >= startOfMonth && s.status === "active").length;
+    newCustomersThisPeriod = subs.filter((s: any) => {
+      const d = new Date(s.created_at);
+      return d >= periodStart && d <= periodEnd && s.status === "active";
+    }).length;
   }
 
   // CAC
-  const cac = newCustomersThisMonth > 0 ? cacManual / newCustomersThisMonth : 0;
+  const cac = newCustomersThisPeriod > 0 ? cacManual / newCustomersThisPeriod : 0;
 
   // ARPU
   const arpu = activeSubs > 0 ? mrr / activeSubs : 0;
 
   // LTV (Life Time Value) = ARPU / Monthly Churn Rate (as decimal)
   const churnDecimal = churnRate / 100;
-  const ltv = churnDecimal > 0 ? arpu / churnDecimal : (activeSubs > 0 ? arpu * 12 : 0); // Assuming 12 months if 0 churn for now
+  const ltv = churnDecimal > 0 ? arpu / churnDecimal : (activeSubs > 0 ? arpu * 12 : 0);
 
   // LTV:CAC Ratio
   const ltvCacRatio = cac > 0 ? ltv / cac : 0;
 
-  // Generate Chart Data (Last 6 months)
+  // Generate Chart Data (Last 6 months, global trend)
   const monthNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
   const chartData = [];
   
@@ -95,9 +104,6 @@ export async function getAdminMetrics(cacManual: number = 0) {
       });
     }
     
-    // Inject realistic mock data for past months if it's a completely fresh DB, 
-    // just so the chart isn't completely flat for the demo.
-    // In production, you would remove this mock injection.
     if (monthUsers === 0 && i > 0 && subs?.length === 0) {
        monthUsers = Math.max(1, 15 - i * 3); 
        monthMrr = monthUsers * 5000;
@@ -117,15 +123,16 @@ export async function getAdminMetrics(cacManual: number = 0) {
     ltv,
     ltvCacRatio,
     activeSubs,
-    totalOrgs: orgs?.length || 0,
-    newCustomersThisMonth,
+    totalOrgs: allOrgs?.length || 0,
+    newCustomersThisMonth: newCustomersThisPeriod, // Alias for backward compatibility
+    newOrgsThisPeriod: filteredOrgs?.length || 0,
     chartData
   };
 }
 
-export async function getAdminOrganizations() {
+export async function getAdminOrganizations(startDateStr?: string, endDateStr?: string) {
   const supabase = createAdminClient();
-  const { data: orgs } = await supabase
+  let query = supabase
     .from("organizations")
     .select(`
       id, name, created_at,
@@ -134,6 +141,11 @@ export async function getAdminOrganizations() {
       subscriptions (*)
     `)
     .order("created_at", { ascending: false });
+
+  if (startDateStr) query = query.gte("created_at", startDateStr);
+  if (endDateStr) query = query.lte("created_at", endDateStr);
+
+  const { data: orgs } = await query;
 
   return (orgs || []).map((org: any) => ({
     ...org,
