@@ -86,7 +86,7 @@ export default function ClientTable({ initialProfiles }: { initialProfiles: any[
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredProfiles.length > 0 ? (
-                filteredProfiles.map((profile: any) => (
+                filteredProfiles.map((profile: any, index: number) => (
                   <tr key={profile.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -134,7 +134,9 @@ export default function ClientTable({ initialProfiles }: { initialProfiles: any[
                       {openDropdown === profile.id && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)}></div>
-                          <div className="absolute right-8 top-12 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden text-left py-1">
+                          <div className={`absolute right-8 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden text-left py-1 ${
+                            index >= filteredProfiles.length - 2 && filteredProfiles.length > 2 ? 'bottom-10' : 'top-12'
+                          }`}>
                             <button 
                               onClick={() => handleToggleStatus(profile.id, profile.role)}
                               disabled={loadingAction !== null}
