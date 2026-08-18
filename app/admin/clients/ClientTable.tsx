@@ -72,8 +72,8 @@ export default function ClientTable({ initialProfiles }: { initialProfiles: any[
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-visible">
-        <div className="overflow-x-auto min-h-[300px]">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="overflow-x-auto min-h-[300px] pb-24">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-50/50 border-b border-slate-100">
               <tr>
