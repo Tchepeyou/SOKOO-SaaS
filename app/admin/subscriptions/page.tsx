@@ -27,20 +27,21 @@ export default async function AdminSubscriptionsPage() {
   let activeCount = 0;
   
   const planPrices: Record<string, number> = {
-    "Starter": 5000,
-    "Pro": 15000,
-    "Enterprise": 50000
+    "starter": 5000,
+    "business": 15000,
+    "enterprise": 50000
   };
 
   const planCounts: Record<string, number> = {};
 
   if (subscriptions) {
     subscriptions.forEach(sub => {
-      if (sub.status === "Actif") {
+      const planKey = sub.plan?.toLowerCase() || 'starter';
+      if (sub.status === "active") {
         activeCount++;
-        mrr += planPrices[sub.plan] || 0;
+        mrr += planPrices[planKey] || 0;
       }
-      planCounts[sub.plan] = (planCounts[sub.plan] || 0) + 1;
+      planCounts[planKey] = (planCounts[planKey] || 0) + 1;
     });
   }
 
@@ -49,7 +50,7 @@ export default async function AdminSubscriptionsPage() {
   let maxCount = 0;
   Object.entries(planCounts).forEach(([plan, count]) => {
     if (count > maxCount) {
-      popularPlan = plan;
+      popularPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
       maxCount = count;
     }
   });
@@ -112,40 +113,47 @@ export default async function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {subscriptions && subscriptions.length > 0 ? subscriptions.map((sub: any) => (
+              {subscriptions && subscriptions.length > 0 ? subscriptions.map((sub: any) => {
+                const planKey = sub.plan?.toLowerCase() || 'starter';
+                return (
                 <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 font-mono text-slate-400 text-xs">{sub.id.substring(0,8)}</td>
                   <td className="px-6 py-4 font-medium text-slate-900">{sub.organizations?.name || "Inconnu"}</td>
                   <td className="px-6 py-4">
-                    <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-semibold">
-                      {sub.plan}
+                    <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-semibold capitalize">
+                      {planKey}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-700">
-                    {planPrices[sub.plan] ? `${planPrices[sub.plan].toLocaleString()} FCFA` : "-"}
+                    {planPrices[planKey] ? `${planPrices[planKey].toLocaleString()} FCFA` : "-"}
                   </td>
                   <td className="px-6 py-4 text-slate-500">
                     {new Date(sub.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4">
-                    {sub.status === "Actif" && (
+                    {sub.status === "active" && (
                       <span className="inline-flex items-center gap-1.5 text-emerald-600 font-medium text-xs">
                         <CheckCircle className="w-4 h-4" /> Actif
                       </span>
                     )}
-                    {sub.status === "En attente" && (
+                    {sub.status === "trialing" && (
                       <span className="inline-flex items-center gap-1.5 text-amber-500 font-medium text-xs">
-                        <Clock className="w-4 h-4" /> En attente
+                        <Clock className="w-4 h-4" /> Essai
                       </span>
                     )}
-                    {sub.status === "Expiré" && (
+                    {(sub.status === "canceled" || sub.status === "past_due") && (
                       <span className="inline-flex items-center gap-1.5 text-red-500 font-medium text-xs">
-                        <div className="w-2 h-2 rounded-full bg-red-500" /> Expiré
+                        <div className="w-2 h-2 rounded-full bg-red-500" /> {sub.status === "canceled" ? "Annulé" : "Expiré"}
+                      </span>
+                    )}
+                    {![ "active", "trialing", "canceled", "past_due"].includes(sub.status) && (
+                      <span className="inline-flex items-center gap-1.5 text-slate-500 font-medium text-xs capitalize">
+                        {sub.status || "Inconnu"}
                       </span>
                     )}
                   </td>
                 </tr>
-              )) : (
+              )}) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                     Aucun abonnement trouvé.
