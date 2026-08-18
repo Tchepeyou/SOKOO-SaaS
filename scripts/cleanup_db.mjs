@@ -14,37 +14,35 @@ async function run() {
   );
   const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   
+  // Exclude the Super Admin
+  const adminEmail = '237655009999@sokoo.app';
+  
   // 1. Fetch all organizations
   const { data: orgs } = await supabase.from('organizations').select('id, name');
-  const orgsToDelete = orgs.filter(o => o.name.includes('Test') || o.name.includes('Expired') || o.name.includes('+237'));
+  // Delete all organizations except the admin's if they have one (admin probably doesn't have an org, or we don't care, we wipe all orgs)
+  console.log(`Found ${orgs.length} organizations to delete`);
   
-  console.log(`Found ${orgsToDelete.length} test organizations to delete`);
-  
-  for (const org of orgsToDelete) {
+  for (const org of orgs) {
      console.log('Deleting org:', org.name);
      await supabase.from('organizations').delete().eq('id', org.id);
   }
   
-  // 2. Fetch users starting with our test emails or pseudo emails
+  // 2. Fetch all users
   const { data: usersData, error: authError } = await supabase.auth.admin.listUsers();
   if (authError) {
       console.error(authError);
       return;
   }
-  const usersToDelete = usersData.users.filter(u => 
-      u.email.includes('exp_') || 
-      u.email.includes('@ex.com') ||
-      u.email.includes('237655')
-  );
+  const usersToDelete = usersData.users.filter(u => u.email !== adminEmail && u.email !== 'stephane.tchepeyou@example.com');
   
-  console.log(`Found ${usersToDelete.length} test users to delete`);
+  console.log(`Found ${usersToDelete.length} users to delete`);
   
   for (const user of usersToDelete) {
      console.log('Deleting user:', user.email);
      await supabase.auth.admin.deleteUser(user.id);
   }
   
-  console.log('Cleanup complete!');
+  console.log('Database Wipe complete! Only Super Admin remains.');
 }
 
 run();
