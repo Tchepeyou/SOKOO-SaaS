@@ -10,7 +10,7 @@ import {
 export default function AdminSidebar() {
   const pathname = usePathname();
 
-  const menuItems = [
+  const menuItems: { href: string, icon: any, label: string, badge?: string }[] = [
     { href: "/admin", icon: LayoutDashboard, label: "Vue d'ensemble" },
     { href: "/admin/subscriptions", icon: ShoppingCart, label: "Abonnements" },
     { href: "/admin/products", icon: Package, label: "Produits" },
@@ -18,7 +18,7 @@ export default function AdminSidebar() {
     { href: "/admin/analytics", icon: BarChart2, label: "Statistiques" },
   ];
 
-  const platformItems = [
+  const platformItems: { href: string, icon: any, label: string }[] = [
     { href: "/admin/settings", icon: Settings, label: "Paramètres" },
     { href: "/admin/support", icon: HelpCircle, label: "Support Technique" },
   ];

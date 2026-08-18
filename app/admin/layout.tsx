@@ -5,6 +5,9 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminMobileNav from "@/components/admin/AdminMobileNav";
 import AdminHeader from "@/components/admin/AdminHeader";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: "Sokoo Super Admin",
 };
