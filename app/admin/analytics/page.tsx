@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+
 import { Users, TrendingUp, Store, Activity } from 'lucide-react';
+import { GrowthChart, ActivityChart } from './AnalyticsChartsClient';
 
 export const metadata = {
   title: "Statistiques | Sokoo Admin",
@@ -93,18 +94,14 @@ export default async function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Croissance Boutiques */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 mb-6">Évolution des Inscriptions (Démo)</h3>
-          <div className="h-[300px] w-full bg-slate-50 rounded-xl flex items-center justify-center border border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium">Graphique dynamique bientôt disponible</p>
-          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-6">Évolution des Inscriptions</h3>
+          <GrowthChart data={growthData} />
         </div>
 
         {/* Activité Hebdomadaire */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 mb-6">Transactions par Jour (Démo)</h3>
-          <div className="h-[300px] w-full bg-slate-50 rounded-xl flex items-center justify-center border border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium">Graphique dynamique bientôt disponible</p>
-          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-6">Transactions par Jour</h3>
+          <ActivityChart data={activityData} />
         </div>
       </div>
     </div>
