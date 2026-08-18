@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-
 import { Users, TrendingUp, Store, Activity } from 'lucide-react';
 import { GrowthChart, ActivityChart } from './AnalyticsChartsClient';
+import { getAdminMetrics } from "@/lib/actions/admin";
 
 export const metadata = {
   title: "Statistiques | Sokoo Admin",
@@ -25,24 +25,8 @@ export default async function AdminAnalyticsPage() {
     .from('sales')
     .select('*', { count: 'exact', head: true });
 
-  const growthData = [
-    { name: 'Jan', boutiques: 40, revenus: 2400 },
-    { name: 'Fév', boutiques: 65, revenus: 4300 },
-    { name: 'Mar', boutiques: 85, revenus: 6800 },
-    { name: 'Avr', boutiques: 120, revenus: 9500 },
-    { name: 'Mai', boutiques: 165, revenus: 13000 },
-    { name: 'Jui', boutiques: boutiquesCount || 210, revenus: 18500 },
-  ];
-
-  const activityData = [
-    { day: 'Lun', active: 145 },
-    { day: 'Mar', active: 180 },
-    { day: 'Mer', active: 195 },
-    { day: 'Jeu', active: 185 },
-    { day: 'Ven', active: 200 },
-    { day: 'Sam', active: 150 },
-    { day: 'Dim', active: 95 },
-  ];
+  // Fetch dynamic metrics for charts
+  const { chartData, activityData } = await getAdminMetrics();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -95,7 +79,7 @@ export default async function AdminAnalyticsPage() {
         {/* Croissance Boutiques */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <h3 className="text-lg font-bold text-slate-900 mb-6">Évolution des Inscriptions</h3>
-          <GrowthChart data={growthData} />
+          <GrowthChart data={chartData} />
         </div>
 
         {/* Activité Hebdomadaire */}

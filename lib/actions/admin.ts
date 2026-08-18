@@ -112,7 +112,38 @@ export async function getAdminMetrics(cacManual: number = 0, startDateStr?: stri
     chartData.push({
       name: monthStr,
       MRR: monthMrr,
-      Utilisateurs: monthUsers
+      boutiques: monthUsers // Changed to 'boutiques' to match the AreaChart dataKey
+    });
+  }
+
+  // Generate Activity Data (Last 7 days of transactions)
+  const activityData = [];
+  const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const { data: recentSales } = await supabase
+    .from("sales")
+    .select("created_at")
+    .gte("created_at", sevenDaysAgo.toISOString());
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const dayStr = dayNames[d.getDay()];
+    
+    const dayStart = new Date(d.setHours(0, 0, 0, 0));
+    const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+    
+    const salesCount = (recentSales || []).filter((sale: any) => {
+      const saleDate = new Date(sale.created_at);
+      return saleDate >= dayStart && saleDate <= dayEnd;
+    }).length;
+    
+    activityData.push({
+      day: dayStr,
+      active: salesCount
     });
   }
 
@@ -126,7 +157,8 @@ export async function getAdminMetrics(cacManual: number = 0, startDateStr?: stri
     totalOrgs: allOrgs?.length || 0,
     newCustomersThisMonth: newCustomersThisPeriod, // Alias for backward compatibility
     newOrgsThisPeriod: filteredOrgs?.length || 0,
-    chartData
+    chartData,
+    activityData
   };
 }
 
