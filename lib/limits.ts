@@ -2,7 +2,8 @@ import { createAdminClient } from "./supabase/admin";
 
 export async function checkPlanLimits(
   organizationId: string, 
-  resource: 'locations' | 'users'
+  resource: 'locations' | 'users',
+  newItemsCount: number = 1
 ): Promise<{ allowed: boolean; message?: string }> {
   const supabase = createAdminClient();
   
@@ -39,7 +40,7 @@ export async function checkPlanLimits(
           .select("*", { count: 'exact', head: true })
           .eq("organization_id", organizationId);
         
-        if (count && count >= 1) {
+        if (count !== null && (count + newItemsCount) > 1) {
           return { 
             allowed: false, 
             message: "Le plan Starter / Essai est limité à un seul point de vente. Veuillez passer au plan Business pour créer des succursales." 
@@ -54,7 +55,7 @@ export async function checkPlanLimits(
           .select("*", { count: 'exact', head: true })
           .eq("organization_id", organizationId);
           
-        if (count && count >= 1) {
+        if (count !== null && (count + newItemsCount) > 1) {
           return { 
             allowed: false, 
             message: "Le plan Starter / Essai est limité à 1 utilisateur (le propriétaire). Veuillez passer au plan Business pour inviter des collaborateurs." 

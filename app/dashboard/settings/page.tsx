@@ -117,6 +117,32 @@ function SettingsContent() {
       if (result?.error) {
         setUpdateMessage({ type: "error", text: result.error });
       } else if (result?.success) {
+        const locationName = formData.get("locationName") as string;
+        const locationAddress = formData.get("locationAddress") as string;
+        const activeLocId = formData.get("activeLocationId") as string;
+        
+        // Update local Dexie DB immediately for instant UI feedback
+        if (activeLocId && locationName) {
+           await db.locations.update(activeLocId, { 
+             name: locationName, 
+             ...(locationAddress && { address: locationAddress })
+           });
+        } else {
+           // Fallback if no active location ID but we want to refresh
+           const locs = await db.locations.toArray();
+           if (locs.length > 0 && locationName) {
+             await db.locations.update(locs[0].id, {
+               name: locationName,
+               ...(locationAddress && { address: locationAddress })
+             });
+           }
+        }
+        
+        // Background sync to ensure full consistency
+        import("@/lib/sync").then(({ syncWithSupabase }) => {
+          syncWithSupabase().catch(console.error);
+        });
+
         setUpdateMessage({ type: "success", text: "Profil mis à jour avec succès." });
       }
     });

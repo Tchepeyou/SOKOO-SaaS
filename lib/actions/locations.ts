@@ -18,14 +18,23 @@ export async function saveLocationToSupabase(id: string, name: string, address: 
 
   if (!profile?.organization_id) return { error: "Organisation introuvable" };
 
+  const adminClient = createAdminClient();
+
+  // Vérifier s'il s'agit d'une mise à jour
+  const { data: existingLoc } = await adminClient
+    .from("locations")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const isUpdate = !!existingLoc;
+
   // Vérifier la limite du plan
-  const limits = await checkPlanLimits(profile.organization_id, 'locations');
+  const limits = await checkPlanLimits(profile.organization_id, 'locations', isUpdate ? 0 : 1);
   if (!limits.allowed) {
     return { error: limits.message };
   }
 
-  const adminClient = createAdminClient();
-  
   const { error } = await adminClient
     .from("locations")
     .upsert({
@@ -78,14 +87,23 @@ export async function bulkSaveLocationsToSupabase(locations: any[]) {
 
   if (!profile?.organization_id) return { error: "Organisation introuvable" };
 
+  const adminClient = createAdminClient();
+
+  // Vérifier combien de nouvelles boutiques on ajoute
+  const { data: existingLocs } = await adminClient
+    .from("locations")
+    .select("id")
+    .eq("organization_id", profile.organization_id);
+    
+  const existingIds = new Set(existingLocs?.map((l: any) => l.id) || []);
+  const newLocationsCount = locations.filter(l => !existingIds.has(l.id)).length;
+
   // Vérifier la limite du plan
-  const limits = await checkPlanLimits(profile.organization_id, 'locations');
+  const limits = await checkPlanLimits(profile.organization_id, 'locations', newLocationsCount);
   if (!limits.allowed) {
     return { error: limits.message };
   }
 
-  const adminClient = createAdminClient();
-  
   const locationsToUpsert = locations.map(l => ({
     ...l,
     organization_id: profile.organization_id
