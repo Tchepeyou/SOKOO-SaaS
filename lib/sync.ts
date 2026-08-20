@@ -256,6 +256,10 @@ export async function syncWithSupabase() {
     }
 
     // 4. Synchroniser les Lieux / Points de vente
+    // NOTE: On désactive le push des locations depuis Dexie car les locations 
+    // sont mises à jour via les Server Actions (updateUserProfile) et cela 
+    // peut écraser les modifications serveur si le state local est obsolète.
+    /*
     const localLocations = await db.locations.toArray();
     if (localLocations.length > 0) {
       const locationsToUpsert = localLocations.map(l => ({
@@ -267,6 +271,7 @@ export async function syncWithSupabase() {
       const res = await bulkSaveLocationsToSupabase(locationsToUpsert);
       if (res?.error) console.error("Erreur de synchronisation (Boutiques):", res.error);
     }
+    */
 
     // --- PULL (Fetch from cloud to local) ---
     // Do this after PUSH to ensure local changes are already in Supabase

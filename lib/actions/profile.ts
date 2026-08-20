@@ -74,8 +74,26 @@ export async function updateUserProfile(formData: FormData) {
     }
 
     // 4. Update locations
-    const activeLocationId = formData.get("activeLocationId") as string;
-    const targetLocationId = activeLocationId || currentProfile?.location_id;
+    let targetLocationId = formData.get("activeLocationId") as string;
+    
+    if (!targetLocationId) {
+      targetLocationId = currentProfile?.location_id;
+    }
+    
+    // Si l'utilisateur n'a pas de location_id explicite, on prend la première boutique de son organisation
+    if (!targetLocationId && currentProfile?.organization_id) {
+       const { data: firstLoc } = await adminClient
+         .from("locations")
+         .select("id")
+         .eq("organization_id", currentProfile.organization_id)
+         .order("created_at", { ascending: true })
+         .limit(1)
+         .single();
+         
+       if (firstLoc) {
+         targetLocationId = firstLoc.id;
+       }
+    }
     
     if (targetLocationId && (locationName || locationAddress)) {
       const updateData: any = {};

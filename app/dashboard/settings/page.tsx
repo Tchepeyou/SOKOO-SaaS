@@ -214,9 +214,11 @@ function SettingsContent() {
                       Informations Personnelles
                     </h3>
                     
-                    {activeLocationId && (
-                      <input type="hidden" name="activeLocationId" value={activeLocationId} />
-                    )}
+                    <input 
+                      type="hidden" 
+                      name="activeLocationId" 
+                      value={activeLocationId || activeStore?.id || profileData?.locations?.id || ""} 
+                    />
 
                     <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 grid sm:grid-cols-2 gap-6">
                       <div>
