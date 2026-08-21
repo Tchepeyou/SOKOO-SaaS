@@ -219,11 +219,11 @@ export async function getHealthRisks() {
       const diffTime = Math.abs(now.getTime() - created.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (14 - diffDays <= 3) {
+      if (30 - diffDays <= 3) {
         risks.push({
           type: "TRIAL_ENDING",
           orgName: org.name,
-          daysLeft: 14 - diffDays
+          daysLeft: 30 - diffDays
         });
       }
     }

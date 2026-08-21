@@ -82,7 +82,7 @@ export default function DashboardLayout({
               const hasActiveSub = org.subscriptions && Array.isArray(org.subscriptions) && org.subscriptions.some((s: any) => s.status === 'active');
               console.log("hasActiveSub:", hasActiveSub);
               if (!hasActiveSub) {
-                let trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date(new Date(org.created_at).getTime() + 14 * 24 * 60 * 60 * 1000);
+                let trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date(new Date(org.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
                 console.log("trialEndsAt:", trialEndsAt, "now:", new Date());
                 if (trialEndsAt.getTime() < new Date().getTime()) {
                   isTrialExpired = true;

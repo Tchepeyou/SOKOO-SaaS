@@ -164,7 +164,7 @@ function SettingsContent() {
       daysRemainingText = diffDays > 0 ? `Il vous reste ${diffDays} jours d'abonnement.` : "Votre abonnement a expiré.";
       showPremiumButton = activeSub.plan === 'starter';
     } else {
-      const trialEndsAt = new Date(new Date(org.created_at).getTime() + 14 * 24 * 60 * 60 * 1000);
+      const trialEndsAt = new Date(new Date(org.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
       const diffTime = trialEndsAt.getTime() - new Date().getTime();
       const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
       daysRemainingText = diffDays > 0 ? `Il vous reste ${diffDays} jours d'essai gratuit.` : "Votre période d'essai a expiré.";

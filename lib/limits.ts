@@ -28,8 +28,8 @@ export async function checkPlanLimits(
   let effectivePlan = activeSub?.plan || "starter";
 
   // 2. Vérifier les limites selon le plan
-  // Les plans starter et trial sont limités
-  if (effectivePlan === "starter" || effectivePlan === "trial") {
+  // Seul le plan starter est limité (le trial donne accès à toutes les fonctionnalités)
+  if (effectivePlan === "starter") {
     
     // Le plan business outrepasse tout (ex: si trial mais plan_id = business)
     if (effectivePlan !== "business" && effectivePlan !== "enterprise") {
