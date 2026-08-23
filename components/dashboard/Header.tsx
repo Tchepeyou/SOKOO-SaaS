@@ -237,7 +237,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 print:hidden">
+    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center justify-between border-b-0 bg-slate-50 px-4 sm:px-6 lg:px-8 print:hidden">
       
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
@@ -279,14 +279,10 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
       )}
 
       <div className="flex items-center flex-1">
-        <button 
-          type="button" 
-          className="-m-2.5 p-2.5 text-slate-700 md:hidden mr-4"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <span className="sr-only">Ouvrir le menu</span>
-          <Menu className="h-6 w-6" aria-hidden="true" />
-        </button>
+        <Link href="/dashboard" className="sm:hidden flex items-center gap-2 mr-4">
+          <img src="/sokoo_logo_s_only_perfect.png" alt="Sokoo" className="h-8 w-auto object-contain drop-shadow-sm py-0.5" />
+          <span className="font-bold text-xl text-slate-900 tracking-tight">Sokoo</span>
+        </Link>
 
         {/* Search Bar Desktop */}
         <div className="hidden sm:flex flex-1 max-w-md" ref={searchContainerRef}>
@@ -299,7 +295,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchOpen(true)}
-              className="block w-full rounded-full border-0 py-2 pl-10 pr-10 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-blue bg-slate-50 hover:bg-slate-100 focus:bg-white transition-all outline-none"
+              className="block w-full rounded-full border-0 py-2 pl-10 pr-10 text-sm text-slate-900 ring-1 ring-inset ring-slate-200/80 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-blue bg-white shadow-sm hover:bg-slate-50 transition-all outline-none"
               placeholder="Rechercher..."
             />
             {!isSearchOpen && (
@@ -361,7 +357,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
         {/* Sync Status */}
         <div className="flex items-center gap-2 mr-2">
           {isOnline ? (
-            <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 shadow-sm">
               <Cloud className="w-4 h-4 text-brand-blue" />
               <span>{isSyncing ? 'Synchronisation...' : (lastSync ? `Synchro: ${lastSync.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : 'En ligne')}</span>
               <button 
@@ -386,7 +382,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <button 
             type="button" 
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="relative p-2 text-slate-400 hover:text-slate-500 rounded-full hover:bg-slate-50 transition-colors"
+            className="relative p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/50 transition-colors"
           >
             <span className="sr-only">Voir les notifications</span>
             <Bell className="h-5 w-5" aria-hidden="true" />
@@ -450,7 +446,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <button 
             type="button" 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2 p-1 pl-2 pr-3 hover:bg-slate-50 rounded-full border border-transparent hover:border-slate-200 transition-all"
+            className="flex items-center gap-2 p-1 pl-2 pr-3 hover:bg-slate-200/50 rounded-full border border-transparent hover:border-slate-200 transition-all"
           >
             <div className="h-7 w-7 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-xs">
               {activeShop?.initials || "..."}

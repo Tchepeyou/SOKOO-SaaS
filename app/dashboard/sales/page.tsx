@@ -7,6 +7,7 @@ import { ReceiptText, Search, Calendar, ChevronRight, X, Printer, Wallet, Smartp
 import { Receipt } from "@/components/dashboard/Receipt";
 
 import { useLocation } from "@/lib/contexts/LocationContext";
+import { cn } from "@/lib/utils";
 
 export default function SalesPage() {
   const { activeLocationId } = useLocation();
@@ -125,7 +126,10 @@ export default function SalesPage() {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0 print:hidden">
         
         {/* Left Side: Sales List */}
-        <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-0">
+        <div className={cn(
+          "flex-1 flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-0",
+          selectedSale ? "hidden lg:flex" : "flex"
+        )}>
           <div className="p-4 border-b border-slate-100 shrink-0 flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -206,7 +210,10 @@ export default function SalesPage() {
         </div>
 
         {/* Right Side: Sale Details */}
-        <div className="w-full lg:w-[400px] max-h-[50vh] lg:max-h-none flex flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-0 shrink-0">
+        <div className={cn(
+          "w-full lg:w-[400px] flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-0 shrink-0",
+          !selectedSale ? "hidden lg:flex" : "flex flex-1"
+        )}>
           {selectedSale ? (
             <>
               <div className="p-4 border-b border-slate-100 bg-brand-dark text-white flex items-center justify-between shrink-0">

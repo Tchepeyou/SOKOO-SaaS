@@ -19,7 +19,7 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="h-20 bg-[#F8F9FA] flex items-center justify-between px-6 md:px-8 flex-shrink-0 z-30 relative border-b border-slate-100">
+    <header className="h-20 bg-slate-50 flex items-center justify-between px-6 md:px-8 flex-shrink-0 z-30 relative md:border-b-0 border-b border-slate-100">
       <div className="flex items-center gap-4">
         <Link href="/admin" className="md:hidden flex items-center">
           <img src="/sokoo_logo_s_only_perfect.png" alt="Sokoo Admin" className="h-8 w-auto object-contain drop-shadow-sm py-0.5" />

@@ -1,7 +1,7 @@
 "use client";
 
 import StatCard from "@/components/dashboard/StatCard";
-import { Package, AlertTriangle, TrendingUp, ArchiveX, ArrowRight } from "lucide-react";
+import { Package, AlertTriangle, TrendingUp, ArchiveX, ArrowRight, ShoppingCart, ArrowRightLeft, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -84,10 +84,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Tableau de Bord</h2>
-        <p className="text-slate-500">Voici l'état de votre stock aujourd'hui.</p>
-      </div>
+        <div className="flex flex-col gap-6 mb-8 mt-2">
+          <div>
+            <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 flex items-center gap-2 tracking-tight">
+              Bonjour ! <span className="text-3xl">☀️</span>
+            </h2>
+            <p className="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
+              <span className="text-yellow-500">💡</span> Voici l'état de votre stock aujourd'hui - prêt à faire des ventes !
+            </p>
+          </div>
+        </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
@@ -122,7 +128,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Chart section */}
-        <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col relative overflow-hidden">
+        <div className="lg:col-span-2 bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col relative overflow-hidden">
           {/* Subtle background flair */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
           
@@ -176,7 +182,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent movements */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col">
+        <div className="bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col">
           <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-6">Mouvements Récents</h3>
           <div className="flex-1 overflow-y-auto pr-1 sm:pr-2">
             <ul className="space-y-4">
@@ -213,9 +219,9 @@ export default function DashboardPage() {
               )}
             </ul>
           </div>
-          <Link 
+            <Link 
             href="/dashboard/movements"
-            className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium text-slate-600 hover:text-brand-blue bg-slate-50 hover:bg-brand-blue/5 rounded-xl transition-colors group"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors group shadow-sm"
           >
             Voir tout l'historique
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

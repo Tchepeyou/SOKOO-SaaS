@@ -6,7 +6,7 @@ export default function WhatsAppButton() {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center group">
+    <div className="hidden md:flex fixed bottom-6 right-6 z-50 items-center group">
       {/* Tooltip that appears on hover */}
       <div className="absolute right-full mr-4 bg-white text-slate-700 px-4 py-2 rounded-xl shadow-lg font-medium text-sm border border-slate-100 opacity-0 invisible translate-x-2 group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 transition-all duration-300 whitespace-nowrap pointer-events-none">
         Besoin d'aide ?

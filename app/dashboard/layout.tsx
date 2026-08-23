@@ -10,6 +10,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { syncWithSupabase } from "@/lib/sync";
 
 import { LocationProvider } from "@/lib/contexts/LocationContext";
+import MobileNavBar from "@/components/dashboard/MobileNavBar";
 
 export default function DashboardLayout({
   children,
@@ -154,14 +155,15 @@ export default function DashboardLayout({
 
   return (
     <LocationProvider>
-      <div className="flex h-screen overflow-hidden bg-brand-light dark:bg-slate-950">
+      <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
         <div className="flex flex-col flex-1 overflow-hidden w-full relative z-0">
           <Header setSidebarOpen={setIsSidebarOpen} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto bg-white md:rounded-tl-3xl md:border-t md:border-l md:border-slate-200 shadow-sm p-4 md:p-6 lg:p-8 pb-28 md:pb-6 lg:pb-8">
             {children}
           </main>
         </div>
+        <MobileNavBar />
         <WhatsAppButton />
       </div>
     </LocationProvider>

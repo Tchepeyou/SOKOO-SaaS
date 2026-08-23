@@ -24,7 +24,7 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-[260px] bg-white border-r border-slate-100 flex-col justify-between overflow-y-auto hidden md:flex flex-shrink-0 relative z-20">
+    <aside className="w-[260px] bg-slate-50 flex-col justify-between overflow-y-auto hidden md:flex flex-shrink-0 relative z-20">
       <div>
         {/* Logo */}
         <Link href="/admin" className="h-20 flex items-center px-6 gap-3 hover:opacity-80 transition-opacity">
@@ -44,12 +44,12 @@ export default function AdminSidebar() {
                   href={item.href} 
                   className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition-colors ${
                     isActive 
-                      ? "bg-blue-50 text-blue-600" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                      ? "bg-white text-brand-blue shadow-sm ring-1 ring-slate-100" 
+                      : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-700"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+                    <Icon className={`w-5 h-5 ${isActive ? "text-brand-blue" : "text-slate-400"}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
@@ -73,11 +73,11 @@ export default function AdminSidebar() {
                   href={item.href} 
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
                     isActive 
-                      ? "bg-blue-50 text-blue-600" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                      ? "bg-white text-brand-blue shadow-sm ring-1 ring-slate-100" 
+                      : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-700"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? "text-brand-blue" : "text-slate-400"}`} />
                   <span>{item.label}</span>
                 </Link>
               );

@@ -132,18 +132,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       {/* Sidebar container */}
       <div 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-brand-dark text-slate-300 shadow-2xl transition-transform duration-300 ease-in-out md:static md:w-64 md:translate-x-0 print:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-50 border-r-0 text-slate-600 shadow-xl md:shadow-none transition-transform duration-300 ease-in-out md:static md:w-64 md:translate-x-0 print:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-slate-900/50">
+        <div className="flex h-16 shrink-0 items-center justify-between px-6">
           <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <img src="/sokoo_logo_s_only_perfect.png" alt="Sokoo" className="h-10 w-auto object-contain drop-shadow-sm py-0.5" />
-            <span className="text-xl font-bold text-white tracking-tight">Sokoo</span>
+            <span className="text-xl font-bold text-slate-900 tracking-tight">Sokoo</span>
           </Link>
           <button 
             type="button" 
-            className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+            className="md:hidden p-2 text-slate-500 hover:text-slate-900 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             <span className="sr-only">Fermer la barre latérale</span>
@@ -160,16 +160,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "group flex items-center px-3 py-3 md:py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                    "group flex items-center px-3 py-3 md:py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
                     isActive
-                      ? "bg-brand-blue/10 text-brand-blue"
-                      : "hover:bg-white/5 hover:text-white"
+                      ? "bg-white shadow-sm border border-slate-200/60 text-slate-900 font-semibold"
+                      : "hover:bg-slate-200/50 hover:text-slate-900 text-slate-600"
                   )}
                 >
                   <item.icon
                     className={cn(
                       "mr-3 h-5 w-5 flex-shrink-0 transition-colors duration-200",
-                      isActive ? "text-brand-blue" : "text-slate-400 group-hover:text-white"
+                      isActive ? "text-brand-blue" : "text-slate-400 group-hover:text-slate-600"
                     )}
                     aria-hidden="true"
                   />
@@ -183,7 +183,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className="mt-auto px-4 pb-4">
           <button 
             onClick={handleLogoutClick}
-            className="flex w-full items-center px-3 py-3 md:py-2.5 text-sm font-medium text-slate-400 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 mt-2"
+            className="flex w-full items-center px-3 py-3 md:py-2.5 text-sm font-medium text-slate-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200 mt-2"
           >
             <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
             Déconnexion

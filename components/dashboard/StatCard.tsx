@@ -43,16 +43,18 @@ export default function StatCard({
   const style = variantStyles[variant] || variantStyles.blue;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 transition-all hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-      <div className={cn("p-3 rounded-full flex-shrink-0 flex items-center justify-center relative z-10", style.iconBg)}>
-        <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", style.iconColor)} strokeWidth={2} />
+    <div className="bg-[#f8f9fa] rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2 transition-all hover:bg-[#f1f3f5] relative overflow-hidden group">
+      <div className="flex items-center gap-2 w-full">
+        <div className={cn("p-1.5 rounded-full flex-shrink-0 flex items-center justify-center relative z-10", style.iconBg)}>
+          <Icon className={cn("h-4 w-4", style.iconColor)} strokeWidth={2} />
+        </div>
       </div>
-      <div className="relative z-10 flex-1">
-        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-1">{title}</h3>
-        <p className="text-[10px] sm:text-xs text-slate-500 mt-1 mb-1 hidden sm:block">{description}</p>
+      <div className="relative z-10 w-full mt-1">
+        <p className="text-2xl sm:text-[26px] leading-none font-bold tracking-tight text-slate-900">{value}</p>
       </div>
-      <div className="relative z-10 text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0">
-        <p className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+      <div className="relative z-10 w-full flex items-center justify-between mt-2 border-t border-slate-200/60 pt-2">
+        <p className="text-[10px] sm:text-xs font-medium text-slate-500">{title}</p>
+        <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full border border-slate-300 text-slate-400 text-[9px] font-medium" title={description}>i</span>
       </div>
     </div>
   );

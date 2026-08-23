@@ -86,7 +86,7 @@ export default function MovementsPage() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Historique des Mouvements</h2>
           <p className="text-slate-500">Toutes les entrées, sorties et ajustements de stock.</p>
         </div>
-        <button onClick={handleExportCSV} className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2 rounded-xl font-medium shadow-sm hover:bg-brand-blue/90 transition-colors w-full sm:w-auto justify-center">
+        <button onClick={handleExportCSV} className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-xl font-medium shadow-sm hover:bg-slate-800 transition-colors w-full sm:w-auto justify-center">
           <Download className="w-4 h-4" />
           Exporter CSV
         </button>
