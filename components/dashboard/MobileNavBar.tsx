@@ -58,7 +58,6 @@ export default function MobileNavBar() {
 
   const moreItems = [
     { href: "/dashboard/movements", icon: ArrowRightLeft, label: "Mouvements" },
-    { href: "/dashboard/clients", icon: Users, label: "Clients" },
     { href: "/dashboard/team", icon: Users, label: "Équipe" },
     { href: "/dashboard/locations", icon: Store, label: "Boutiques" },
     { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
