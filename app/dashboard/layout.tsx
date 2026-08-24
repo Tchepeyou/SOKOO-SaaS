@@ -45,49 +45,58 @@ export default function DashboardLayout({
         const { data } = await supabase.auth.getSession();
         
         if (!data.session) {
+          if (!navigator.onLine) {
+            console.log("Offline mode: session refresh failed, but allowing local access.");
+            setIsAuthorized(true);
+            return;
+          }
           setIsAuthorized(false);
           router.push("/login");
           return;
         }
 
-        const userId = data.session.user.id;
+        const userId = data.session?.user?.id;
         
         let isTrialExpired = false;
         let role = null;
 
-        const member = await db.teamMembers.get(userId);
-        if (member) {
-          role = member.role;
+        if (userId) {
+          const member = await db.teamMembers.get(userId);
+          if (member) {
+            role = member.role;
+          }
         }
         
         try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select(`
-              role,
-              organizations (
-                created_at,
-                subscriptions (
-                  status
+          if (userId) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select(`
+                role,
+                organizations (
+                  created_at,
+                  subscriptions (
+                    status
+                  )
                 )
-              )
-            `)
-            .eq('id', userId)
-            .single();
+              `)
+              .eq('id', userId)
+              .single();
 
-          console.log("PROFILE DATA:", JSON.stringify(profile));
-          if (profile) {
-            if (!role) role = profile.role;
-            const org: any = profile.organizations;
-            if (org) {
-              const hasActiveSub = org.subscriptions && Array.isArray(org.subscriptions) && org.subscriptions.some((s: any) => s.status === 'active');
-              console.log("hasActiveSub:", hasActiveSub);
-              if (!hasActiveSub) {
-                let trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date(new Date(org.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
-                console.log("trialEndsAt:", trialEndsAt, "now:", new Date());
-                if (trialEndsAt.getTime() < new Date().getTime()) {
-                  isTrialExpired = true;
-                  console.log("IS TRIAL EXPIRED SET TO TRUE!");
+            console.log("PROFILE DATA:", JSON.stringify(profile));
+            if (profile) {
+              if (!role) role = profile.role;
+              const org: any = profile.organizations;
+              if (org) {
+                const hasActiveSub = org.subscriptions && Array.isArray(org.subscriptions) && org.subscriptions.some((s: any) => s.status === 'active');
+                console.log("hasActiveSub:", hasActiveSub);
+                if (!hasActiveSub) {
+                  let trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date(new Date(org.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
+                  console.log("trialEndsAt:", trialEndsAt, "now:", new Date());
+                  if (trialEndsAt.getTime() < new Date().getTime()) {
+                    isTrialExpired = true;
+                    console.log("IS TRIAL EXPIRED SET TO TRUE!");
+                  }
                 }
               }
             }

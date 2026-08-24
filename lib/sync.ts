@@ -17,19 +17,23 @@ export async function pullFromSupabase(orgId: string) {
       .eq('organization_id', orgId);
     
     if (productsData) {
-      const productsToPut: Product[] = productsData.map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category || "Général",
-        stock: 0,
-        price: p.unit_price || 0,
-        purchasePrice: p.purchase_price,
-        barcode: p.barcode,
-        imageUrl: p.image_url,
-        status: p.is_active ? "En stock" : "Suspendu",
-        locationId: p.location_id || "",
-        createdAt: new Date(p.created_at).getTime()
-      }));
+      const existingProducts = await db.products.toArray();
+      const productsToPut: Product[] = productsData.map(p => {
+        const existing = existingProducts.find(ep => ep.id === p.id);
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.category || "Général",
+          stock: 0,
+          price: p.unit_price || 0,
+          purchasePrice: existing?.purchasePrice || undefined, // Preserve local purchasePrice
+          barcode: existing?.barcode || undefined, // Preserve local barcode
+          imageUrl: existing?.imageUrl || undefined, // Preserve local imageUrl
+          status: p.is_active ? "En stock" : "Suspendu",
+          locationId: p.location_id || "",
+          createdAt: new Date(p.created_at).getTime()
+        };
+      });
       
       const { data: stockData, error: stockErr } = await supabase
         .from('current_stock')
@@ -195,9 +199,7 @@ export async function syncWithSupabase() {
           name: p.name,
           category: p.category,
           unit_price: p.price,
-          purchase_price: p.purchasePrice || null,
-          barcode: p.barcode || null,
-          image_url: p.imageUrl || null,
+          // Removed purchase_price, barcode, image_url as they don't exist in Supabase yet
           alert_threshold: 5,
           is_active: p.status !== "Suspendu"
         })),

@@ -31,17 +31,8 @@ function LoginContent() {
   const [isLogin, setIsLogin] = useState(defaultIsLogin);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    import("@/lib/db").then(({ db }) => {
-      Promise.all([
-        db.products.clear(),
-        db.sales.clear(),
-        db.movements.clear(),
-        db.locations.clear(),
-        db.teamMembers.clear()
-      ]).catch(console.error);
-    });
-  }, []);
+  // Removed aggressive DB clearing on mount to prevent data loss.
+  // DB is now only cleared on explicit logout.
 
   async function clientAction(formData: FormData) {
     if (!navigator.onLine) {
