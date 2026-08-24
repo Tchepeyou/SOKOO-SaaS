@@ -15,7 +15,8 @@ import {
   Settings,
   LogOut,
   X,
-  MessageCircle
+  MessageCircle,
+  BellRing
 } from "lucide-react";
 import { signOut } from "@/lib/actions/sign-out";
 import { db } from "@/lib/db";
@@ -57,6 +58,7 @@ export default function MobileNavBar() {
   ];
 
   const moreItems = [
+    { href: "/dashboard/alerts", icon: BellRing, label: "Alertes" },
     { href: "/dashboard/movements", icon: ArrowRightLeft, label: "Mouvements" },
     { href: "/dashboard/team", icon: Users, label: "Équipe" },
     { href: "/dashboard/locations", icon: Store, label: "Boutiques" },
