@@ -82,12 +82,23 @@ export default function DashboardPage() {
     return <div className="p-8 text-center text-slate-500">Chargement du tableau de bord...</div>;
   }
 
+  const hour = new Date().getHours();
+  let greeting = "Bonjour";
+  let emoji = "☀️";
+  if (hour >= 18) {
+    greeting = "Bonsoir";
+    emoji = "🌙";
+  } else if (hour >= 12) {
+    greeting = "Bon après-midi";
+    emoji = "🌤️";
+  }
+
   return (
     <div className="space-y-8">
         <div className="flex flex-col gap-6 mb-8 mt-2">
           <div>
             <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 flex items-center gap-2 tracking-tight">
-              Bonjour ! <span className="text-3xl">☀️</span>
+              {greeting} <span className="text-3xl">{emoji}</span>
             </h2>
             <p className="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
               <span className="text-yellow-500">💡</span> Voici l'état de votre stock aujourd'hui - prêt à faire des ventes !

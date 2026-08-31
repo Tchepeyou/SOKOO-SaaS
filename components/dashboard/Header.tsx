@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, Menu, User, Command, X, Check, Package, LogOut, Settings, Trash2, Store, Plus } from "lucide-react";
+import { Bell, Search, Menu, User, Command, X, Check, Package, LogOut, Settings, Trash2, Store, Plus, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -446,23 +446,24 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <button 
             type="button" 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2 p-1 pl-2 pr-3 hover:bg-slate-200/50 rounded-full border border-transparent hover:border-slate-200 transition-all"
+            className="flex items-center gap-1.5 p-1 pl-2 pr-2 sm:pr-3 hover:bg-slate-200/50 rounded-full border border-transparent hover:border-slate-200 transition-all"
           >
             <div className="h-7 w-7 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-xs">
               {activeShop?.initials || "..."}
             </div>
-            <div className="hidden lg:flex flex-col items-start text-left">
+            <div className="hidden lg:flex flex-col items-start text-left ml-1">
               <span className="text-sm font-medium text-slate-700 leading-tight">
                 {activeShop?.name || "Chargement..."}
               </span>
               <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Boutique</span>
             </div>
+            <ChevronDown className="h-4 w-4 text-slate-400 ml-1" />
           </button>
 
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
               <div className="px-3 py-2">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Vos Boutiques</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Changer de boutique</p>
                 <div className="space-y-1">
                   {shops
                     .filter(shop => (role === 'owner' || role === 'Admin') || shop.id === userLocationId)

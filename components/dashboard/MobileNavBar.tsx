@@ -61,7 +61,7 @@ export default function MobileNavBar() {
     { href: "/dashboard/alerts", icon: BellRing, label: "Alertes" },
     { href: "/dashboard/movements", icon: ArrowRightLeft, label: "Mouvements" },
     { href: "/dashboard/team", icon: Users, label: "Équipe" },
-    { href: "/dashboard/locations", icon: Store, label: "Boutiques" },
+    { href: "/dashboard/locations", icon: Store, label: "Points de vente" },
     { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
     { href: "#", icon: WhatsAppIcon, label: "WhatsApp", isExternal: true },
   ];
