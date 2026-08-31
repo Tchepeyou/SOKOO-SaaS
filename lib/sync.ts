@@ -171,6 +171,31 @@ export async function syncWithSupabase() {
       return false;
     }
 
+    // --- SECURITY FIX: Prevent cross-account data leakage ---
+    const currentUserId = session.user.id;
+    // Check if we are running in the browser before accessing localStorage
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('sokoo_last_user_id');
+
+      if (storedUserId && storedUserId !== currentUserId) {
+        console.warn("Changement de compte détecté ! Nettoyage de la base de données locale pour éviter la fuite de données.");
+        try {
+          await Promise.all([
+            db.products.clear(),
+            db.sales.clear(),
+            db.movements.clear(),
+            db.locations.clear(),
+            db.teamMembers.clear()
+          ]);
+          localStorage.removeItem('sokoo_active_location');
+        } catch (e) {
+          console.error("Erreur lors du nettoyage de la base de données locale:", e);
+        }
+      }
+      localStorage.setItem('sokoo_last_user_id', currentUserId);
+    }
+    // --------------------------------------------------------
+
     // Récupérer le profil et l'organization_id
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
