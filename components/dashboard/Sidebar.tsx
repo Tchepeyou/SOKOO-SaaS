@@ -14,7 +14,8 @@ import {
   BellRing,
   ShoppingCart,
   X,
-  ReceiptText
+  ReceiptText,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/actions/sign-out";
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Caisse", href: "/dashboard/pos", icon: ShoppingCart },
   { name: "Ventes", href: "/dashboard/sales", icon: ReceiptText },
+  { name: "Rapports", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Produits", href: "/dashboard/products", icon: Package },
   { name: "Mouvements", href: "/dashboard/movements", icon: ArrowRightLeft },
   { name: "Alertes", href: "/dashboard/alerts", icon: BellRing },

@@ -15,7 +15,7 @@ export default function AdminMobileNav() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-[70px] bg-white border-t border-slate-100 flex items-center justify-around px-2 z-50 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+    <div className="print:hidden md:hidden fixed bottom-0 left-0 right-0 h-[70px] bg-white border-t border-slate-100 flex items-center justify-around px-2 z-50 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
       {items.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;

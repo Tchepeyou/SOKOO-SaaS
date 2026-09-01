@@ -33,14 +33,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      <AdminSidebar />
+      <div className="print:hidden">
+        <AdminSidebar />
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-[calc(100vh-70px)] md:h-screen overflow-hidden relative">
-        <AdminHeader />
+        <div className="print:hidden">
+          <AdminHeader />
+        </div>
 
         {/* Dashboard Content scrollable area */}
-        <div className="flex-1 overflow-auto bg-white md:rounded-tl-3xl md:border-t md:border-l md:border-slate-200 shadow-sm p-4 md:p-8 pt-6">
+        <div className="flex-1 overflow-auto bg-white md:rounded-tl-3xl md:border-t md:border-l md:border-slate-200 shadow-sm p-4 md:p-8 pt-6 print:overflow-visible print:border-none print:shadow-none">
           <div className="max-w-[1600px] mx-auto pb-6">
             {children}
           </div>

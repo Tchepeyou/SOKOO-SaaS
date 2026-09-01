@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Package, TrendingUp, BellRing, Store, ShieldCheck, Users, Truck } from "lucide-react";
+import { ArrowRight, Package, TrendingUp, BellRing, Store, ShieldCheck, Users, Truck, Download, BarChart3 } from "lucide-react";
 
 export default function VitrineHomePage() {
   return (
@@ -16,7 +16,7 @@ export default function VitrineHomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-blue opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-blue"></span>
             </span>
-            Sokoo 2.0 est maintenant disponible
+            Sokoo 2.0 avec Analyse des ventes et Export PDF
           </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
@@ -27,7 +27,7 @@ export default function VitrineHomePage() {
           </h1>
           
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-slate-600 mb-10 leading-relaxed">
-            Gardez le contrôle sur vos produits, vos points de vente et votre équipe avec un tableau de bord pensé pour la croissance de votre entreprise. Fini les ruptures surprises.
+            Gardez le contrôle sur vos produits, vos points de vente et votre équipe. Grâce à nos nouveaux rapports détaillés, pilotez la croissance de votre entreprise avec une précision chirurgicale.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -40,7 +40,7 @@ export default function VitrineHomePage() {
             </Link>
             <Link 
               href="/tarifs"
-              className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-colors"
+              className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-bold text-lg hover:bg-slate-50 transition-colors shadow-sm hover:shadow-md"
             >
               Voir les tarifs
             </Link>
@@ -52,14 +52,14 @@ export default function VitrineHomePage() {
           </div>
         </div>
         
-        {/* Real Dashboard Preview */}
+        {/* Real Dashboard Preview (Now with Analytics) */}
         <div className="relative mt-20 w-full max-w-5xl mx-auto px-4 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10" />
-          <div className="rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden bg-slate-50 p-2 sm:p-4 ring-1 ring-black/5">
+          <div className="rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden bg-slate-50 p-2 sm:p-4 ring-1 ring-black/5 transform transition-transform hover:scale-[1.01] duration-500">
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex">
               <img 
-                src="/images/dashboard-preview.png" 
-                alt="Aperçu du tableau de bord Sokoo" 
+                src="/images/dashboard-reports-preview.png" 
+                alt="Aperçu des rapports et analyses Sokoo" 
                 className="w-full h-auto object-cover object-top rounded-lg"
               />
             </div>
@@ -72,75 +72,79 @@ export default function VitrineHomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Tout ce dont vous avez besoin pour grandir</h2>
-            <p className="text-slate-600 text-lg">Sokoo intègre toutes les fonctionnalités nécessaires pour piloter sereinement votre activité commerciale.</p>
+            <p className="text-slate-600 text-lg">Sokoo intègre toutes les fonctionnalités nécessaires pour piloter sereinement votre activité commerciale et maximiser vos profits.</p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Feature 1 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-blue-50 text-brand-blue rounded-2xl flex items-center justify-center mb-6">
-                <Package className="w-7 h-7" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+            
+            {/* Feature 1 (Analytics) - Highlighted */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-blue-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500" />
+              <div className="w-12 h-12 bg-blue-100 text-brand-blue rounded-xl flex items-center justify-center mb-5">
+                <BarChart3 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Suivi en temps réel</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Suivez vos entrées et sorties de stock instantanément. L'historique complet est toujours disponible et exportable.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Analyses & Rapports</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Visualisez vos revenus, calculez votre bénéfice brut et identifiez vos meilleurs produits. Graphiques dynamiques et données en temps réel.
               </p>
             </div>
-            
-            {/* Feature 2 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mb-6">
-                <BellRing className="w-7 h-7" />
+
+            {/* Feature 2 (PDF Export) - Highlighted */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500" />
+              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-5">
+                <Download className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Alertes Intelligentes</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Ne soyez plus jamais en rupture. Recevez des notifications automatiques lorsque le stock d'un produit devient faible.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Exportation PDF</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Exportez vos rapports mensuels et l'état de vos stocks en format PDF en un seul clic pour vos bilans, associés, ou votre comptabilité.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                <Store className="w-7 h-7" />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center mb-5">
+                <Package className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Multi-boutiques</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Gérez plusieurs points de vente et centralisez toute votre activité sur un seul et même tableau de bord puissant.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Suivi de stock précis</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Suivez vos entrées et sorties de stock instantanément. L'historique complet des mouvements est toujours disponible.
               </p>
             </div>
-
+            
             {/* Feature 4 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-6">
-                <Users className="w-7 h-7" />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center mb-5">
+                <BellRing className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Gestion des équipes</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Invitez vos collaborateurs et définissez des rôles stricts (caissiers, gérants) pour sécuriser l'accès à vos données.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Alertes Intelligentes</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Ne soyez plus jamais en rupture. Recevez des notifications automatiques lorsque le stock d'un produit devient faible.
               </p>
             </div>
 
             {/* Feature 5 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
-                <TrendingUp className="w-7 h-7" />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-5">
+                <Store className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Analytique avancée</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Découvrez vos produits les plus rentables et optimisez votre trésorerie grâce à nos rapports financiers détaillés.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Multi-boutiques</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Gérez plusieurs points de vente et centralisez toute votre activité sur un seul et même tableau de bord puissant.
               </p>
             </div>
 
             {/* Feature 6 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-6">
-                <Truck className="w-7 h-7" />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mb-5">
+                <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Gestion des fournisseurs</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Centralisez vos contacts fournisseurs et enregistrez vos bons de commande pour un réapprovisionnement fluide.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Gestion des équipes</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Invitez vos collaborateurs et définissez des rôles stricts (caissiers, superviseurs) pour sécuriser l'accès à vos données.
               </p>
             </div>
+
           </div>
         </div>
       </section>
@@ -150,13 +154,13 @@ export default function VitrineHomePage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Prêt à révolutionner votre gestion ?</h2>
           <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
-            Rejoignez les centaines de gérants qui ont choisi Sokoo pour simplifier leur quotidien et augmenter leur rentabilité.
+            Rejoignez les centaines de gérants qui ont choisi Sokoo pour simplifier leur quotidien, sécuriser leur stock et augmenter leur rentabilité.
           </p>
           <Link 
             href="/login?mode=signup"
             className="inline-flex items-center gap-2 px-8 py-4 bg-brand-blue text-white rounded-full font-bold text-lg hover:bg-blue-600 transition-colors shadow-xl shadow-brand-blue/20 hover:-translate-y-0.5"
           >
-            Créer mon compte
+            Créer mon compte gratuitement
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

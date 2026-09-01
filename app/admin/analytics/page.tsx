@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Users, TrendingUp, Store, Activity } from 'lucide-react';
 import { GrowthChart, ActivityChart } from './AnalyticsChartsClient';
 import { getAdminMetrics } from "@/lib/actions/admin";
+import ExportPDFButton from "@/components/admin/ExportPDFButton";
 
 export const metadata = {
   title: "Statistiques | Sokoo Admin",
@@ -30,9 +31,12 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Statistiques Globales</h2>
-        <p className="text-sm text-slate-500 mt-1">Analyse détaillée des performances de Sokoo SaaS.</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Statistiques Globales</h2>
+          <p className="text-sm text-slate-500 mt-1">Analyse détaillée des performances de Sokoo SaaS.</p>
+        </div>
+        <ExportPDFButton />
       </div>
 
       {/* KPI Cards */}
