@@ -195,7 +195,7 @@ export default function POSPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-6rem)] lg:h-[calc(100vh-8rem)] overflow-hidden print:h-auto print:overflow-visible -m-4 p-4 md:-m-6 md:p-6 lg:-m-8 lg:p-8">
+    <div className="flex flex-col h-[calc(100dvh-130px)] md:h-[calc(100vh-8rem)] overflow-hidden print:h-auto print:overflow-visible -m-4 p-4 md:-m-6 md:p-6 lg:-m-8 lg:p-8">
       
       {/* Receipt Component (Hidden by default, shown when printing) */}
       {lastSale && (
@@ -279,9 +279,9 @@ export default function POSPage() {
 
 
         {/* Right Side: Cart (Ticket) */}
-        <div className="w-full lg:w-[400px] flex flex-col bg-white lg:shadow-sm border border-slate-100 overflow-hidden shrink-0 flex-none h-[45dvh] lg:h-auto rounded-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:shadow-sm z-10">
-          <div className="p-3 lg:p-4 border-b border-slate-100 bg-brand-dark text-white flex items-center justify-between shrink-0">
-            <h3 className="font-bold text-base lg:text-lg flex items-center gap-2">
+        <div className="w-full lg:w-[400px] flex flex-col bg-white lg:shadow-sm border border-slate-100 overflow-hidden shrink-0 flex-none h-auto max-h-[55%] lg:max-h-none lg:h-auto rounded-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:shadow-sm z-10">
+          <div className="p-2 lg:p-4 border-b border-slate-100 bg-brand-dark text-white flex items-center justify-between shrink-0">
+            <h3 className="font-bold text-sm lg:text-lg flex items-center gap-2">
               <ReceiptText className="w-4 h-4 lg:w-5 lg:h-5" />
               Ticket de caisse
             </h3>
@@ -378,8 +378,8 @@ export default function POSPage() {
           </div>
 
           {!showSuccess && (
-            <div className="p-3 lg:p-5 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-10">
-              <div className="space-y-1 lg:space-y-2 mb-3 lg:mb-4">
+            <div className="p-2 lg:p-5 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-10">
+              <div className="space-y-1 lg:space-y-2 mb-2 lg:mb-4">
                 <div className="flex justify-between text-xs lg:text-sm text-slate-500">
                   <span>Sous-total</span>
                   <span>{subtotal.toLocaleString()} FCFA</span>
@@ -401,15 +401,15 @@ export default function POSPage() {
                     <span>- {discountAmount.toLocaleString()} FCFA</span>
                   </div>
                 )}
-                <div className="pt-2 mt-2 lg:pt-3 lg:mt-3 border-t border-dashed border-slate-200 flex justify-between items-end">
-                  <span className="font-bold text-sm lg:text-base text-slate-900">Total à payer</span>
-                  <span className="text-xl lg:text-2xl font-black text-brand-dark">{total.toLocaleString()} FCFA</span>
+                <div className="pt-1 mt-1 lg:pt-3 lg:mt-3 border-t border-dashed border-slate-200 flex justify-between items-end">
+                  <span className="font-bold text-xs lg:text-base text-slate-900">Total</span>
+                  <span className="text-lg lg:text-2xl font-black text-brand-dark">{total.toLocaleString()} FCFA</span>
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">Mode de paiement</label>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="mb-2 lg:mb-4">
+                <label className="text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2 block">Mode de paiement</label>
+                <div className="grid grid-cols-3 gap-1 lg:gap-2">
                   <button 
                     onClick={() => setPaymentMethod("Espèces")}
                     className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-medium transition-colors ${paymentMethod === "Espèces" ? "bg-brand-blue/10 border-brand-blue text-brand-blue" : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"}`}
@@ -437,9 +437,9 @@ export default function POSPage() {
               <button 
                 onClick={handleCheckout}
                 disabled={cart.length === 0 || isProcessing || showSuccess}
-                className="w-full py-3 lg:py-4 bg-brand-blue text-white rounded-xl font-bold text-base lg:text-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full py-2.5 lg:py-4 bg-brand-blue text-white rounded-xl font-bold text-sm lg:text-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 active:scale-[0.98]"
               >
-                {isProcessing ? "Encaissement..." : "Encaisser"}
+                {isProcessing ? "En cours..." : "Encaisser"}
               </button>
             </div>
           )}
