@@ -6,8 +6,22 @@ import { bulkSaveLocationsToSupabase } from "@/lib/actions/locations";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabase = createClient();
 
+export let isSyncingBackground = false;
+let syncTimeout: NodeJS.Timeout | null = null;
+
+export function triggerAutoSync() {
+  // Ignore modifications that are made by the sync process itself to avoid infinite loops
+  if (isSyncingBackground) return;
+  
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => {
+    syncWithSupabase().catch(e => console.error("Auto-sync failed:", e));
+  }, 3000);
+}
+
 export async function pullFromSupabase(orgId: string) {
   try {
+    isSyncingBackground = true;
     console.log("⬇️ Récupération des données depuis Supabase...");
 
     // 1. Pull Products
@@ -152,6 +166,8 @@ export async function pullFromSupabase(orgId: string) {
     console.log("✅ Données récupérées (Pull) avec succès.");
   } catch (error) {
     console.error("❌ Erreur lors du Pull Supabase:", error);
+  } finally {
+    isSyncingBackground = false;
   }
 }
 
@@ -160,14 +176,22 @@ export async function syncWithSupabase() {
     console.log("Synchronisation ignorée : Clés Supabase non configurées ou invalides.");
     return false;
   }
+  
+  // Prevent parallel syncs
+  if (isSyncingBackground) {
+    console.log("Synchronisation déjà en cours...");
+    return false;
+  }
 
   try {
+    isSyncingBackground = true;
     console.log("🔄 Début de la synchronisation avec Supabase...");
     
     // Vérifier l'authentification
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError || !session) {
       console.log("Synchronisation ignorée : Utilisateur non connecté.");
+      isSyncingBackground = false;
       return false;
     }
 
@@ -303,12 +327,17 @@ export async function syncWithSupabase() {
     // --- PULL (Fetch from cloud to local) ---
     // Do this after PUSH to ensure local changes are already in Supabase
     // and we get the latest computed values (e.g. stock quantities)
+    // pullFromSupabase manually manages isSyncingBackground, but we'll temporarily release it
+    // so it doesn't get blocked by our own lock.
+    isSyncingBackground = false;
     await pullFromSupabase(orgId);
-
+    
+    // We don't need to re-acquire the lock because we're at the end
     console.log("✅ Synchronisation (Push & Pull) terminée avec succès.");
     return true;
   } catch (error) {
     console.error("❌ Erreur critique lors de la synchronisation :", error);
+    isSyncingBackground = false;
     return false;
   }
 }

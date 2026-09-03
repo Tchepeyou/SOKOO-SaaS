@@ -34,8 +34,21 @@ export default function DashboardLayout({
       syncWithSupabase();
     };
 
+    // Listen for visibility change to trigger sync when user comes back to the app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log("Application de retour au premier plan, tentative de synchronisation...");
+        syncWithSupabase();
+      }
+    };
+
     window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {

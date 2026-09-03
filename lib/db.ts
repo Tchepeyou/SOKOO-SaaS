@@ -87,6 +87,22 @@ class SokooDB extends Dexie {
 
 export const db = new SokooDB();
 
+// Attach hooks to trigger auto-sync on local changes
+if (typeof window !== 'undefined') {
+  const tables = ['products', 'movements', 'sales', 'teamMembers', 'locations'];
+  tables.forEach(tableName => {
+    db.table(tableName).hook('creating', () => {
+      import('./sync').then(m => m.triggerAutoSync());
+    });
+    db.table(tableName).hook('updating', () => {
+      import('./sync').then(m => m.triggerAutoSync());
+    });
+    db.table(tableName).hook('deleting', () => {
+      import('./sync').then(m => m.triggerAutoSync());
+    });
+  });
+}
+
 export async function initMockData() {
   // Mock data initialization is disabled now that Supabase sync is live.
   // We want users to start with a completely empty local database.
