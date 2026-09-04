@@ -134,11 +134,26 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="report-container space-y-8 pb-8 print:space-y-4 print:pb-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 print:mt-0">
+    <div className="report-container space-y-8 pb-8 print:space-y-6 print:pb-0 print:bg-white">
+      
+      {/* En-tête d'impression (visible uniquement à l'impression) */}
+      <div className="hidden print:flex flex-col border-b-2 border-slate-900 pb-4 mb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Rapport d'Activité</h1>
+            <p className="text-base text-slate-500 mt-1 font-medium">Sokoo - Solution de Gestion</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-slate-900">Période : {monthOptions.find(o => o.value === selectedMonth)?.label}</p>
+            <p className="text-xs text-slate-500 mt-1">Édité le {new Date().toLocaleDateString('fr-FR')}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 print:hidden">
         <div>
           <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 tracking-tight flex items-center gap-2">
-            Rapports <BarChart3 className="h-8 w-8 text-brand-blue print:hidden" />
+            Rapports <BarChart3 className="h-8 w-8 text-brand-blue" />
           </h2>
           <p className="text-sm text-slate-500 mt-2">
             Analysez les performances de votre boutique.
@@ -169,7 +184,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4 print:gap-4 print:w-full">
         <StatCard
           title="Chiffre d'Affaires"
           value={formatCurrency(totalRevenue)}
@@ -200,10 +215,10 @@ export default function ReportsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:flex print:flex-col print:gap-8">
         {/* Évolution du CA (Graphique) */}
-        <div className="lg:col-span-2 bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+        <div className="lg:col-span-2 bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col relative overflow-hidden print:bg-white print:border print:border-slate-200 print:break-inside-avoid print:shadow-none">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none print:hidden" />
           
           <div className="flex justify-between items-start mb-6 relative z-10">
             <div>
@@ -212,7 +227,7 @@ export default function ReportsPage() {
             </div>
           </div>
           
-          <div className="h-64 sm:h-80 w-full relative z-10">
+          <div className="h-64 sm:h-80 w-full relative z-10 print:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
                 <defs>
@@ -262,21 +277,21 @@ export default function ReportsPage() {
         </div>
 
         {/* Meilleurs produits */}
-        <div className="bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col print:bg-white print:border print:border-slate-200 print:break-inside-avoid print:shadow-none">
+          <div className="flex items-center gap-2 mb-6 print:mb-4">
             <Trophy className="h-5 w-5 text-yellow-500" />
             <h3 className="text-base sm:text-lg font-semibold text-slate-900">Meilleures Ventes</h3>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-1">
-            <ul className="space-y-4">
+          <div className="flex-1 overflow-y-auto pr-1 print:overflow-visible">
+            <ul className="space-y-4 print:space-y-3">
               {topProducts.length === 0 ? (
                 <li className="text-center py-8 text-slate-500 bg-white rounded-xl border border-slate-100">
                   Aucune donnée pour ce mois.
                 </li>
               ) : (
                 topProducts.map((product, index) => (
-                  <li key={index} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                  <li key={index} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow print:shadow-none print:border-slate-200 print:py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
                         #{index + 1}

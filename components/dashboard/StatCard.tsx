@@ -43,7 +43,7 @@ export default function StatCard({
   const style = variantStyles[variant] || variantStyles.blue;
 
   return (
-    <div className="bg-[#f8f9fa] rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2 transition-all hover:bg-[#f1f3f5] relative overflow-hidden group">
+    <div className="bg-[#f8f9fa] rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2 transition-all hover:bg-[#f1f3f5] relative overflow-hidden group print:bg-white print:border print:border-slate-200 print:shadow-none print:break-inside-avoid">
       <div className="flex items-center gap-2 w-full">
         <div className={cn("p-1.5 rounded-full flex-shrink-0 flex items-center justify-center relative z-10", style.iconBg)}>
           <Icon className={cn("h-4 w-4", style.iconColor)} strokeWidth={2} />
