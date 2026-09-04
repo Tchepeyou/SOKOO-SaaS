@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import StatCard from "@/components/dashboard/StatCard";
 import { BarChart3, TrendingUp, ShoppingBag, PiggyBank, Calendar, Trophy, Download } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -19,6 +19,8 @@ import {
 export default function ReportsPage() {
   const { activeLocationId } = useLocation();
   const [isMounted, setIsMounted] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   
   // Initialize to current month (e.g. "2024-05")
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -29,6 +31,47 @@ export default function ReportsPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    
+    // Wait for the DOM to update with the export layout and Recharts to resize
+    setTimeout(async () => {
+      try {
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
+        
+        const element = reportRef.current;
+        if (!element) return;
+        
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdfWidth = 210;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        const pdf = new jsPDF({
+          orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
+          unit: 'mm',
+          format: [pdfWidth, pdfHeight]
+        });
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Rapport_Sokoo_${selectedMonth}.pdf`);
+        
+      } catch (error) {
+        console.error("Erreur lors de l'export PDF:", error);
+        alert("Une erreur est survenue lors de la génération du PDF.");
+      } finally {
+        setIsExporting(false);
+      }
+    }, 800);
+  };
 
   const allSales = useLiveQuery(() => {
     if (activeLocationId) {
@@ -134,57 +177,68 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="report-container space-y-8 pb-8 print:space-y-6 print:pb-0 print:bg-white">
+    <div className="report-wrapper space-y-8 pb-8 overflow-x-hidden relative">
       
-      {/* En-tête d'impression (visible uniquement à l'impression) */}
-      <div className="hidden print:flex flex-col border-b-2 border-slate-900 pb-4 mb-6">
-        <div className="flex justify-between items-end">
+      {/* En-tête normal (caché pendant l'export) */}
+      {!isExporting && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Rapport d'Activité</h1>
-            <p className="text-base text-slate-500 mt-1 font-medium">Sokoo - Solution de Gestion</p>
+            <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 tracking-tight flex items-center gap-2">
+              Rapports <BarChart3 className="h-8 w-8 text-brand-blue" />
+            </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              Analysez les performances de votre boutique.
+            </p>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-bold text-slate-900">Période : {monthOptions.find(o => o.value === selectedMonth)?.label}</p>
-            <p className="text-xs text-slate-500 mt-1">Édité le {new Date().toLocaleDateString('fr-FR')}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 print:hidden">
-        <div>
-          <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 tracking-tight flex items-center gap-2">
-            Rapports <BarChart3 className="h-8 w-8 text-brand-blue" />
-          </h2>
-          <p className="text-sm text-slate-500 mt-2">
-            Analysez les performances de votre boutique.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 print:hidden">
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Exporter (PDF)
-          </button>
           
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-            <Calendar className="h-5 w-5 text-slate-400" />
-            <select 
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
             >
-              {monthOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Génération...' : 'Exporter (PDF)'}
+            </button>
+            
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+              <Calendar className="h-5 w-5 text-slate-400" />
+              <select 
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
+              >
+                {monthOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4 print:gap-4 print:w-full">
+      {/* Zone exportable */}
+      <div 
+        ref={reportRef} 
+        className={isExporting ? "w-[1200px] p-12 bg-white flex flex-col gap-10 absolute top-0 left-0 z-50 origin-top-left" : "space-y-8"}
+      >
+        {/* En-tête d'impression (visible uniquement à l'export) */}
+        {isExporting && (
+          <div className="flex flex-col border-b-2 border-slate-900 pb-6 mb-2">
+            <div className="flex justify-between items-end">
+              <div>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Rapport d'Activité</h1>
+                <p className="text-lg text-slate-500 mt-2 font-medium">Sokoo - Solution de Gestion</p>
+              </div>
+              <div className="text-right">
+                <p className="text-base font-bold text-slate-900">Période : {monthOptions.find(o => o.value === selectedMonth)?.label}</p>
+                <p className="text-sm text-slate-500 mt-1">Édité le {new Date().toLocaleDateString('fr-FR')}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={`grid gap-4 ${isExporting ? 'grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
         <StatCard
           title="Chiffre d'Affaires"
           value={formatCurrency(totalRevenue)}
@@ -213,22 +267,24 @@ export default function ReportsPage() {
           variant="purple"
           description="Basé sur le prix d'achat"
         />
-      </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:flex print:flex-col print:gap-8">
-        {/* Évolution du CA (Graphique) */}
-        <div className="lg:col-span-2 bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col relative overflow-hidden print:bg-white print:border print:border-slate-200 print:break-inside-avoid print:shadow-none">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none print:hidden" />
+        <div className={`grid gap-8 ${isExporting ? 'grid-cols-1 grid-rows-none flex-col' : 'grid-cols-1 lg:grid-cols-3'}`}>
+          {/* Évolution du CA (Graphique) */}
+          <div className={`lg:col-span-2 bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col relative overflow-hidden ${isExporting ? 'bg-white border border-slate-200 shadow-none' : ''}`}>
+            {!isExporting && (
+              <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+            )}
           
           <div className="flex justify-between items-start mb-6 relative z-10">
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-slate-900">Évolution du Chiffre d'Affaires</h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">Données journalières pour le mois sélectionné</p>
             </div>
-          </div>
-          
-          <div className="h-64 sm:h-80 w-full relative z-10 print:h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
+            </div>
+            
+            <div className={`w-full relative z-10 ${isExporting ? 'h-[400px]' : 'h-64 sm:h-80'}`}>
+              <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorCa" x1="0" y1="0" x2="0" y2="1">
@@ -270,29 +326,30 @@ export default function ReportsPage() {
                   fillOpacity={1} 
                   fill="url(#colorCa)" 
                   activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }}
+                  isAnimationActive={!isExporting}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+          </div>
 
-        {/* Meilleurs produits */}
-        <div className="bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col print:bg-white print:border print:border-slate-200 print:break-inside-avoid print:shadow-none">
-          <div className="flex items-center gap-2 mb-6 print:mb-4">
+          {/* Meilleurs produits */}
+          <div className={`bg-[#f8f9fa] rounded-[24px] p-4 sm:p-6 flex flex-col ${isExporting ? 'bg-white border border-slate-200 shadow-none mt-8' : ''}`}>
+            <div className="flex items-center gap-2 mb-6">
             <Trophy className="h-5 w-5 text-yellow-500" />
             <h3 className="text-base sm:text-lg font-semibold text-slate-900">Meilleures Ventes</h3>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto pr-1 print:overflow-visible">
-            <ul className="space-y-4 print:space-y-3">
-              {topProducts.length === 0 ? (
+            </div>
+            
+            <div className={`flex-1 ${isExporting ? 'overflow-visible' : 'overflow-y-auto pr-1'}`}>
+              <ul className="space-y-4">
+                {topProducts.length === 0 ? (
                 <li className="text-center py-8 text-slate-500 bg-white rounded-xl border border-slate-100">
                   Aucune donnée pour ce mois.
                 </li>
-              ) : (
-                topProducts.map((product, index) => (
-                  <li key={index} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow print:shadow-none print:border-slate-200 print:py-3">
-                    <div className="flex items-center gap-3">
+                ) : (
+                  topProducts.map((product, index) => (
+                    <li key={index} className={`flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm transition-shadow ${isExporting ? 'shadow-none border-slate-200 py-4 mb-3' : 'hover:shadow-md'}`}>
+                      <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
                         #{index + 1}
                       </div>
@@ -304,10 +361,11 @@ export default function ReportsPage() {
                     <div className="font-bold text-slate-900 text-sm text-right pl-2">
                       {formatCurrency(product.revenue)}
                     </div>
-                  </li>
-                ))
-              )}
-            </ul>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
