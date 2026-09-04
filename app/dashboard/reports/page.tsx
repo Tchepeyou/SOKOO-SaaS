@@ -134,7 +134,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-8 print:space-y-4 print:pb-0">
+    <div className="report-container space-y-8 pb-8 print:space-y-4 print:pb-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 print:mt-0">
         <div>
           <h2 className="text-[32px] sm:text-[40px] font-normal text-slate-900 tracking-tight flex items-center gap-2">

@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 
-import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown, Check, Edit, Image as ImageIcon, Barcode } from "lucide-react";
+import { Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Package, Calendar, ArrowLeft, ChevronDown, Check, Edit, Image as ImageIcon, Barcode, Trash2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -169,6 +169,14 @@ function ProductsContent() {
     }
     
     setEditingProduct(null);
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!editingProduct || !editingProduct.id) return;
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
+      await db.products.delete(editingProduct.id);
+      setEditingProduct(null);
+    }
   };
 
   return (
@@ -589,13 +597,19 @@ function ProductsContent() {
                 </div>
               </div>
 
-              <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setEditingProduct(null)} className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
-                  Annuler
+              <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                <button type="button" onClick={handleDeleteProduct} className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-medium transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                  <span className="sm:hidden">Supprimer</span>
                 </button>
-                <button type="submit" className="flex-1 px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm flex justify-center items-center">
-                  Mettre à jour
-                </button>
+                <div className="flex gap-3 flex-1">
+                  <button type="button" onClick={() => setEditingProduct(null)} className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
+                    Annuler
+                  </button>
+                  <button type="submit" className="flex-1 px-4 py-3 bg-brand-dark text-white rounded-xl font-medium hover:bg-slate-800 transition-colors shadow-sm flex justify-center items-center">
+                    Mettre à jour
+                  </button>
+                </div>
               </div>
             </form>
           </div>

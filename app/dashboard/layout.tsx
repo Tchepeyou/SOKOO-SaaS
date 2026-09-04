@@ -177,16 +177,24 @@ export default function DashboardLayout({
 
   return (
     <LocationProvider>
-      <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-        <div className="flex flex-col flex-1 overflow-hidden w-full relative z-0">
-          <Header setSidebarOpen={setIsSidebarOpen} />
-          <main className="flex-1 overflow-y-auto bg-white md:rounded-tl-3xl md:border-t md:border-l md:border-slate-200 shadow-sm p-4 md:p-6 lg:p-8 pb-28 md:pb-6 lg:pb-8">
+      <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-slate-50 dark:bg-slate-950">
+        <div className="print:hidden">
+          <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        </div>
+        <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible print:block w-full relative z-0">
+          <div className="print:hidden">
+            <Header setSidebarOpen={setIsSidebarOpen} />
+          </div>
+          <main className="flex-1 overflow-y-auto print:overflow-visible bg-white md:rounded-tl-3xl md:border-t md:border-l md:border-slate-200 shadow-sm p-4 md:p-6 lg:p-8 pb-28 md:pb-6 lg:pb-8 print:p-0 print:border-none print:shadow-none">
             {children}
           </main>
         </div>
-        <MobileNavBar />
-        <WhatsAppButton />
+        <div className="print:hidden">
+          <MobileNavBar />
+        </div>
+        <div className="print:hidden">
+          <WhatsAppButton />
+        </div>
       </div>
     </LocationProvider>
   );
